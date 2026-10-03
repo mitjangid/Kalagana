@@ -8,7 +8,8 @@ structures evaluated at runtime.
 from __future__ import annotations
 
 __version__ = "0.1.0"
+__license__ = "MIT"
 
 from . import julian, sun, moon, ayanamsa, solver  # noqa: F401
 
-__all__ = ["julian", "sun", "moon", "ayanamsa", "solver", "__version__"]
+__all__ = ["julian", "sun", "moon", "ayanamsa", "solver", "__version__", "__license__"]

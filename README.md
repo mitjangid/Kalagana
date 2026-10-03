@@ -10,7 +10,7 @@
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](#-requirements)
 [![Offline](https://img.shields.io/badge/network-100%25%20offline-success.svg)](#-why-this-exists)
 [![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](#-roadmap)
-[![License](https://img.shields.io/badge/license-not%20specified-lightgrey.svg)](#-license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
@@ -301,7 +301,11 @@ Panchang calculations encode **tradition and convention** (ayanamsa choice, masa
 
 ## 📄 License
 
-No license has been specified for this repository yet. Until one is added, all rights are reserved by the author. If you intend to use, distribute or contribute to this project, please open an issue to clarify licensing.
+Released under the **MIT License** — see the [`LICENSE`](LICENSE) file for the full text.
+
+Copyright (c) 2026 [Amit K. Jangir](https://github.com/mitjangid).
+
+You are free to use, modify, and distribute this software, including for commercial purposes, provided the copyright notice and permission notice are retained.
 
 ---
 
