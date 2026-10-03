@@ -12,6 +12,11 @@
 [![Status](https://img.shields.io/badge/status-active%20development-orange.svg)](#-roadmap)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+<br/>
+
+[![GitHub stars](https://img.shields.io/github/stars/mitjangid/Kalagana?style=social)](https://github.com/mitjangid/Kalagana/stargazers)
+[![GitHub followers](https://img.shields.io/github/followers/mitjangid?style=social)](https://github.com/mitjangid?tab=followers)
+
 </div>
 
 ---
@@ -306,6 +311,25 @@ Released under the **MIT License** — see the [`LICENSE`](LICENSE) file for the
 Copyright (c) 2026 [Amit K. Jangir](https://github.com/mitjangid).
 
 You are free to use, modify, and distribute this software, including for commercial purposes, provided the copyright notice and permission notice are retained.
+
+## ⭐ Show your support
+
+If **Kalagana** helps you — or you just love an offline, transparent panchang — please consider giving a little back:
+
+<p align="center">
+  <a href="https://github.com/mitjangid/Kalagana/stargazers">
+    <img src="https://img.shields.io/github/stars/mitjangid/Kalagana?style=for-the-badge&logo=github&label=Star%20this%20repo&color=yellow" alt="Star this repository">
+  </a>
+  <a href="https://github.com/mitjangid?tab=followers">
+    <img src="https://img.shields.io/github/followers/mitjangid?style=for-the-badge&logo=github&label=Follow&color=blue" alt="Follow @mitjangid">
+  </a>
+</p>
+
+- ⭐ **Star** this repository — a star helps more people discover the project.
+- 👤 **Follow** [@mitjangid](https://github.com/mitjangid) for updates and new work.
+- 🔁 **Share** it with someone who checks the panchang every day.
+
+Thank you for your support! 🙏
 
 ---
 
