@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kalagana"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline, dependency-free Hindu (Drik) panchang and festival calculator, computed from first principles."
 readme = "README.md"
 requires-python = ">=3.10"
