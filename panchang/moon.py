@@ -24,6 +24,7 @@ __all__ = [
     "moon_latitude",
     "moon_distance",
     "moon_position",
+    "moon_ra_dec",
     "fundamental_arguments",
 ]
 
@@ -33,8 +34,8 @@ _DEG = math.pi / 180.0
 # and Sum(r) in 1e-3 km.
 _TERMS_LR: Tuple[Tuple[int, int, int, int, int, int], ...] = (
     (0, 0, 1, 0, 6288774, -20905355),
-    (2, 0, -1, 1, 1274027, -3699111),
-    (2, 0, 0, 1, 658314, -2955968),
+    (2, 0, -1, 0, 1274027, -3699111),
+    (2, 0, 0, 0, 658314, -2955968),
     (0, 0, 2, 0, 213618, -569925),
     (0, 1, 0, 0, -185116, 48888),
     (0, 0, 0, 2, -114332, -3149),
@@ -45,7 +46,7 @@ _TERMS_LR: Tuple[Tuple[int, int, int, int, int, int], ...] = (
     (0, 1, -1, 0, -40923, -129620),
     (1, 0, 0, 0, -34720, 108743),
     (0, 1, 1, 0, -30383, 104755),
-    (2, 0, 0, -1, 15327, 10321),
+    (2, 0, 0, -2, 15327, 10321),
     (0, 0, 1, 2, -12528, 0),
     (0, 0, 1, -2, 10980, 79661),
     (4, 0, -1, 0, 10675, -34782),
@@ -77,21 +78,21 @@ _TERMS_LR: Tuple[Tuple[int, int, int, int, int, int], ...] = (
     (0, 2, -1, 0, -713, -2117),
     (2, 2, -1, 0, -700, 2354),
     (2, 1, -2, 0, 691, 0),
-    (2, -1, 0, -1, 596, 0),
-    (2, 0, -2, 1, 549, -1423),
-    (2, 0, 3, 0, 537, -1117),
-    (2, -1, 1, -1, 520, -1571),
-    (0, 0, 4, 0, -487, -1739),
-    (2, -2, 2, 0, -399, 0),
-    (2, 0, -4, 0, -381, -4421),
-    (2, -1, -1, 2, 351, 0),
-    (0, 0, 2, -2, -340, 0),
-    (2, 0, -2, -1, 330, 0),
-    (2, 2, -2, 0, 327, 0),
-    (2, -1, 2, 0, -323, 1165),
-    (2, 3, -1, 0, 299, 0),
-    (2, 0, 0, -2, 294, 0),
-    (2, -2, 1, 0, 0, 8752),
+    (2, -1, 0, -2, 596, 0),
+    (4, 0, 1, 0, 549, -1423),
+    (0, 0, 4, 0, 537, -1117),
+    (4, -1, 0, 0, 520, -1571),
+    (1, 0, -2, 0, -487, -1739),
+    (2, 1, 0, -2, -399, 0),
+    (0, 0, 2, -2, -381, -4421),
+    (1, 1, 1, 0, 351, 0),
+    (3, 0, -2, 0, -340, 0),
+    (4, 0, -3, 0, 330, 0),
+    (2, -1, 2, 0, 327, 0),
+    (0, 2, 1, 0, -323, 1165),
+    (1, 1, -1, 0, 299, 0),
+    (2, 0, 3, 0, 294, 0),
+    (2, 0, -1, -2, 0, 8752),
 )
 
 # Table 47.B: arguments and coefficients for Sum(b) in 1e-6 deg.
@@ -260,3 +261,28 @@ def moon_distance(jd_tt: float) -> float:
 def moon_position(jd_tt: float) -> Tuple[float, float, float]:
     """Return ``(longitude_deg, latitude_deg, distance_km)`` for the Moon."""
     return moon_longitude(jd_tt), moon_latitude(jd_tt), moon_distance(jd_tt)
+
+
+def moon_ra_dec(jd_tt: float) -> Tuple[float, float]:
+    """Return the Moon's apparent ``(right_ascension_deg, declination_deg)``.
+
+    Converts the ecliptic longitude/latitude through the apparent obliquity
+    of the ecliptic (Meeus 13.3, 13.4).
+    """
+    from .sun import mean_obliquity
+
+    lam = moon_longitude(jd_tt) * _DEG
+    beta = moon_latitude(jd_tt) * _DEG
+    t = julian_centuries(jd_tt)
+    eps = mean_obliquity(jd_tt) * _DEG
+    # Nutation in obliquity (dominant term) for apparent coordinates.
+    omega = (125.04 - 1934.136 * t) * _DEG
+    eps += (0.00256 * math.cos(omega)) * _DEG
+    ra = math.atan2(
+        math.sin(lam) * math.cos(eps) - math.tan(beta) * math.sin(eps),
+        math.cos(lam),
+    )
+    dec = math.asin(
+        math.sin(beta) * math.cos(eps) + math.cos(beta) * math.sin(eps) * math.sin(lam)
+    )
+    return (ra / _DEG) % 360.0, dec / _DEG
