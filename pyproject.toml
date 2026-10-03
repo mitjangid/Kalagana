@@ -40,7 +40,7 @@ kalagana = "kalagana.cli:main"
 [project.urls]
 Homepage = "https://github.com/mitjangid/Kalagana"
 Repository = "https://github.com/mitjangid/Kalagana"
-Documentation = "https://github.com/mitjangid/Kalagana/blob/main/API_README.md"
+Documentation = "https://github.com/mitjangid/Kalagana/blob/master/API_README.md"
 Issues = "https://github.com/mitjangid/Kalagana/issues"
 
 [tool.setuptools]

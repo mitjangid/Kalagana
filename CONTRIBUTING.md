@@ -114,17 +114,8 @@ python scripts/release.py --dry-run release --bump patch --push
 |---|---|---|
 | `ci.yml` | push / PR | self-test + unit tests on Ubuntu, Windows and macOS, Python 3.10 and 3.13 |
 | `release.yml` | tag `v*` | builds sdist + wheel, creates the **GitHub Release**, publishes to **PyPI** (trusted publishing) |
-| `container.yml` | push / tag | publishes the Docker image to **`ghcr.io/<owner>/kalagana`** |
 
-> **Packaging note:** GitHub Packages does not host Python distributions, so the package goes to **PyPI**; the GitHub **Packages** tab fills from the container image. PyPI publishing uses a [Trusted Publisher](https://docs.pypi.org/trusted-publishers/) — configure it for this repo, the `release.yml` workflow and the `pypi` environment; no API token is stored.
-
-### Container
-
-```bash
-docker build -t kalagana .
-docker run --rm -p 8765:8765 -e KALAGANA_CITY=mumbai kalagana
-curl http://127.0.0.1:8765/health
-```
+> **Packaging note:** the package is published to **PyPI**. Publishing uses a [Trusted Publisher](https://docs.pypi.org/trusted-publishers/) — configure it for this repo, the `release.yml` workflow and the `pypi` environment; no API token is stored.
 
 ## 📚 References
 
