@@ -48,6 +48,10 @@
 .plandex/
 .copilot/
 
+# --- Local-only documentation / specs ----------------------------------------
+# Working specs / prompt documents kept locally, not published to GitHub.
+Docs/
+
 # --- Editor / IDE configuration ----------------------------------------------
 .vscode/
 .idea/
