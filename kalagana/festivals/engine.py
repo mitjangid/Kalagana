@@ -12,12 +12,13 @@ selects which.  Skipped (kshaya) tithis simply produce no match that month.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .. import julian
 from ..calendar_month import masa_at, sankranti_rashis_between
+from ..hijri import hijri_to_gregorian, hijri_years_for_gregorian
 from ..limbs import (
     NAKSHATRAS,
     nakshatra_number,
@@ -34,6 +35,7 @@ __all__ = [
     "FestivalOccurrence",
     "festival_dates",
     "festivals_for_year",
+    "national_holidays",
     "find_next",
 ]
 
@@ -63,6 +65,7 @@ class FestivalOccurrence:
     paksha: Optional[str]
     tithi: Optional[str]
     note: str = ""
+    kind: str = "festival"
 
     def __str__(self) -> str:
         when = self.month and f"{self.month} {self.paksha} {self.tithi}"
@@ -89,8 +92,9 @@ class _DayInfo:
     sun_rashi: int
     sankrantis: Tuple[int, ...]
     adhika: bool
+    masa_amanta: str
     _ayanamsa: str
-    _cache: Dict[str, Tuple[Optional[str], Optional[str], Optional[int]]]
+    _cache: Dict[str, Tuple[str, str, str, int]]
 
     def _reference_tt(self, window: str) -> float:
         if window == "sunrise":
@@ -109,24 +113,30 @@ class _DayInfo:
             return _jd_tt(self.moonrise) if self.moonrise else _jd_tt(self.sunset)
         raise ValueError(f"unknown window {window!r}")
 
-    def at_window(self, window: str) -> Tuple[str, str, int]:
-        """Return ``(masa, paksha, within_paksha_tithi)`` at ``window``."""
+    def at_window(self, window: str) -> Tuple[str, str, str, int]:
+        """Return ``(amanta, purnimanta, paksha, within_paksha_tithi)`` at ``window``.
+
+        The month names are taken from the day's sunrise (a lunar month changes
+        only at a new moon, which does not fall between sunrise and most of the
+        day's windows); this keeps the whole day on one month label.
+        """
         cached = self._cache.get(window)
         if cached is not None:
-            m, p, t = cached
-            return (m or "", p or "", t or 0)
+            return cached
         jd = self._reference_tt(window)
         tithi = tithi_number(jd)
         paksha = "Shukla" if tithi <= 15 else "Krishna"
         within = tithi if tithi <= 15 else tithi - 15
-        m = masa_at(jd, self._ayanamsa)
-        name = m.name
-        if paksha == "Krishna":
-            from ..calendar_month import LUNAR_MONTHS
+        amanta = self.masa_amanta
+        from ..calendar_month import LUNAR_MONTHS
 
-            name = LUNAR_MONTHS[(LUNAR_MONTHS.index(m.name) + 1) % 12]
-        self._cache[window] = (name, paksha, within)
-        return (name, paksha, within)
+        if paksha == "Krishna":
+            purnimanta = LUNAR_MONTHS[(LUNAR_MONTHS.index(amanta) + 1) % 12]
+        else:
+            purnimanta = amanta
+        result = (amanta, purnimanta, paksha, within)
+        self._cache[window] = result
+        return result
 
 
 def _day_info(day: date, loc: Location, ayanamsa: str) -> Optional[_DayInfo]:
@@ -142,7 +152,8 @@ def _day_info(day: date, loc: Location, ayanamsa: str) -> Optional[_DayInfo]:
     jd_ns = _jd_tt(next_sunrise)
     sankrantis = tuple(r for r, _t in sankranti_rashis_between(jd_s, jd_ns, ayanamsa))
     sun_rashi = int(sidereal_sun_longitude(jd_s, ayanamsa) // 30.0)
-    adhika = masa_at(jd_s, ayanamsa).adhika
+    m_sunrise = masa_at(jd_s, ayanamsa)
+    adhika = m_sunrise.adhika
     return _DayInfo(
         day=day,
         sunrise=sunrise,
@@ -155,6 +166,7 @@ def _day_info(day: date, loc: Location, ayanamsa: str) -> Optional[_DayInfo]:
         sun_rashi=sun_rashi,
         sankrantis=sankrantis,
         adhika=adhika,
+        masa_amanta=m_sunrise.name,
         _ayanamsa=ayanamsa,
         _cache={},
     )
@@ -167,11 +179,12 @@ def _matches_lunar(rule: FestivalRule, info: _DayInfo) -> bool:
         return False
     if rule.sun_in_rashi is not None and info.sun_rashi != rule.sun_in_rashi:
         return False
-    masa, paksha, within = info.at_window(rule.window)
+    amanta, purnimanta, paksha, within = info.at_window(rule.window)
     if rule.paksha is not None and paksha != rule.paksha:
         return False
     if rule.tithi is not None and within != rule.tithi:
         return False
+    masa = amanta if rule.month_system == "amanta" else purnimanta
     if rule.masa is not None and masa != rule.masa:
         return False
     # Adhika-masa policy.
@@ -201,7 +214,8 @@ def _group_pick(days: List[date], tie_break: str) -> List[date]:
 
 
 def _occurrence(rule: FestivalRule, info: _DayInfo) -> FestivalOccurrence:
-    masa, paksha, within = info.at_window(rule.window)
+    amanta, purnimanta, paksha, within = info.at_window(rule.window)
+    masa = amanta if rule.month_system == "amanta" else purnimanta
     t = tithi_name(within if paksha == "Shukla" else within + 15)
     return FestivalOccurrence(
         name=rule.name,
@@ -210,6 +224,7 @@ def _occurrence(rule: FestivalRule, info: _DayInfo) -> FestivalOccurrence:
         paksha=paksha,
         tithi=t,
         note=rule.note,
+        kind=rule.kind,
     )
 
 
@@ -220,14 +235,20 @@ def festival_dates(
     ayanamsa: str = "lahiri",
     month_system: str = "purnimanta",
     include_monthly: bool = True,
+    include_islamic: bool = True,
+    include_fixed: bool = True,
     rules: Sequence[FestivalRule] = FESTIVAL_RULES,
+    kinds: Optional[Sequence[str]] = None,
 ) -> List[FestivalOccurrence]:
     """Compute all festival occurrences in ``year`` for ``loc``.
 
     ``tradition`` is one of north, south, tamil, telugu, kannada, malayalam,
     bengali, odia, gujarati, marathi (it selects the regional rule set).
     ``month_system`` is accepted for API compatibility; dates are independent
-    of it (only the displayed month name changes).
+    of it (only the displayed month name changes).  ``kinds`` optionally
+    restricts output to the given categories (e.g. ``("national",)``).
+    ``include_islamic`` and ``include_fixed`` switch off the Hijri and the
+    fixed Gregorian-date rule groups respectively.
     """
     region = _TRADITION_REGION.get(tradition.strip().lower(), "North")
 
@@ -247,7 +268,49 @@ def festival_dates(
     for rule in rules:
         if rule.monthly and not include_monthly:
             continue
+        if rule.system == "hijri" and not include_islamic:
+            continue
+        if rule.system == "fixed" and not include_fixed:
+            continue
         if region not in rule.regions:
+            continue
+        if kinds is not None and rule.kind not in kinds:
+            continue
+
+        if rule.system == "fixed":
+            if rule.fixed_month is None or rule.fixed_day is None:
+                continue
+            occurrences.append(
+                FestivalOccurrence(
+                    name=rule.name,
+                    date=date(year, rule.fixed_month, rule.fixed_day),
+                    month=None,
+                    paksha=None,
+                    tithi=None,
+                    note=rule.note or "Fixed Gregorian date.",
+                    kind=rule.kind,
+                )
+            )
+            continue
+
+        if rule.system == "hijri":
+            if rule.hijri_month is None or rule.hijri_day is None:
+                continue
+            for hy in hijri_years_for_gregorian(year):
+                gd = hijri_to_gregorian(hy, rule.hijri_month, rule.hijri_day)
+                if gd.year != year:
+                    continue
+                occurrences.append(
+                    FestivalOccurrence(
+                        name=rule.name,
+                        date=gd,
+                        month=None,
+                        paksha=None,
+                        tithi=None,
+                        note=rule.note or "Tabular Hijri date.",
+                        kind=rule.kind,
+                    )
+                )
             continue
 
         if rule.system == "solar":
@@ -270,6 +333,7 @@ def festival_dates(
                             paksha=None,
                             tithi=None,
                             note=rule.note or "Solar (sankranti-based).",
+                            kind=rule.kind,
                         )
                     )
             continue
@@ -277,11 +341,14 @@ def festival_dates(
         matching = [info for info in infos if _matches_lunar(rule, info)]
         chosen_days = _group_pick([i.day for i in matching], rule.tie_break)
         for cd in chosen_days:
-            if cd.year != year:
-                continue
             # Recover the matching info for this day for labeling.
             info = next(i for i in matching if i.day == cd)
-            occurrences.append(_occurrence(rule, info))
+            occ = _occurrence(rule, info)
+            if rule.offset_days:
+                occ = replace(occ, date=occ.date + timedelta(days=rule.offset_days))
+            if occ.date.year != year:
+                continue
+            occurrences.append(occ)
 
     occurrences.sort(key=lambda o: (o.date, o.name))
     return occurrences
@@ -295,6 +362,21 @@ def festivals_for_year(
 ) -> List[FestivalOccurrence]:
     """Convenience alias for :func:`festival_dates`."""
     return festival_dates(year, loc, tradition=tradition, **kwargs)
+
+
+def national_holidays(
+    year: int,
+    loc: Location,
+    tradition: str = "north",
+    kinds: Sequence[str] = ("national",),
+    **kwargs,
+) -> List[FestivalOccurrence]:
+    """Fixed-date national holidays (Republic/Independence/Gandhi Jayanti).
+
+    Pass ``kinds=("national", "observance")`` to also include the
+    commemorative observance days, or any other set of ``kind`` values.
+    """
+    return festival_dates(year, loc, tradition=tradition, kinds=kinds, **kwargs)
 
 
 def find_next(

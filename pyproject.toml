@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kalagana"
+version = "0.1.0"
+description = "Offline, dependency-free Hindu (Drik) panchang and festival calculator, computed from first principles."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Amit K. Jangir" }]
+keywords = ["panchang", "hindu-calendar", "astronomy", "festivals", "vedic", "offline", "drik-panchang"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Religion",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# On Windows the stdlib zoneinfo needs the IANA tz database supplied separately.
+tz = ["tzdata"]
+test = ["pytest"]
+# Release/packaging tooling (development only; the runtime stays dependency-free).
+dev = ["build>=1.2", "twine>=5.0", "pytest>=8.0"]
+
+[project.scripts]
+kalagana = "kalagana.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mitjangid/Kalagana"
+Repository = "https://github.com/mitjangid/Kalagana"
+Documentation = "https://github.com/mitjangid/Kalagana/blob/main/API_README.md"
+Issues = "https://github.com/mitjangid/Kalagana/issues"
+
+[tool.setuptools]
+packages = ["kalagana", "kalagana.festivals"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+kalagana = ["py.typed"]

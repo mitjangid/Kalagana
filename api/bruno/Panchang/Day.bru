@@ -1,0 +1,17 @@
+meta {
+  name: Day panchang
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/day
+  body: none
+  auth: none
+}
+
+params:query {
+  date: {{date}}
+  city: {{city}}
+  ayanamsa: {{ayanamsa}}
+}

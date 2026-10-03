@@ -1,0 +1,16 @@
+meta {
+  name: Daily muhurta
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/muhurta
+  body: none
+  auth: none
+}
+
+params:query {
+  date: {{date}}
+  city: {{city}}
+}

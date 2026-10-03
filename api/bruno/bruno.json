@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "name": "Kalagana API",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"],
+  "scripts": {
+    "moduleWhitelist": [],
+    "filesystemAccess": { "allow": false }
+  }
+}

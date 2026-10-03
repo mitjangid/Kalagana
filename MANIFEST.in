@@ -1,0 +1,24 @@
+# Files included in the source distribution (sdist) on top of the package.
+include LICENSE
+include README.md
+include API_README.md
+include .env.example
+include pyproject.toml
+include MANIFEST.in
+
+# API client import files (OpenAPI / Postman / Insomnia / Bruno).
+recursive-include api *.json *.md *.bru
+
+# Developer tooling and tests (useful in the sdist, not installed).
+recursive-include scripts *.py
+recursive-include tests *.py
+
+# Never ship caches, bytecode or local environment files.
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.egg-info
+prune dist
+prune build
+prune .github
+prune docs
+exclude .env

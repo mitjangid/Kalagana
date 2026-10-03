@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish the built distribution"
+        type: choice
+        default: testpypi
+        options: [testpypi, pypi, none]
+
+permissions:
+  contents: write   # create the GitHub release
+  id-token: write   # PyPI trusted publishing (OIDC)
+
+jobs:
+  # Fail fast if the tag and the packaged version disagree.
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - id: version
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . >/dev/null
+          PKG_VERSION="$(python -c 'import kalagana; print(kalagana.__version__)')"
+          echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Packaged version: $PKG_VERSION"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            if [[ "v${PKG_VERSION}" != "${GITHUB_REF_NAME}" ]]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match version v${PKG_VERSION}"
+              exit 1
+            fi
+          fi
+      - name: Self-test
+        run: python -m kalagana.selftest
+
+  build:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --outdir dist
+      - name: Check the metadata
+        run: |
+          python -m pip install --upgrade twine
+          twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  github-release:
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  # Tag pushes publish to PyPI. Configure a Trusted Publisher on PyPI for this
+  # repository + workflow + environment name ("pypi") — no API token required.
+  publish-pypi:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

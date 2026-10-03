@@ -1,5 +1,5 @@
 # =============================================================================
-# Drik Panchang (Kalagana) - Git ignore rules
+# Kalagana - Git ignore rules
 # =============================================================================
 # Covers: all hidden/dot folders, AI coding-assistant folders, and common
 # editor / OS / Python build tool artifacts.
@@ -50,7 +50,12 @@
 
 # --- Local-only documentation / specs ----------------------------------------
 # Working specs / prompt documents kept locally, not published to GitHub.
-Docs/
+docs/
+
+# --- GitHub automation -------------------------------------------------------
+# .github/ is a real project folder (CI, releases) -- keep it despite ".*/" above.
+!.github/
+!.github/**
 
 # --- Editor / IDE configuration ----------------------------------------------
 .vscode/
@@ -99,6 +104,12 @@ virtualenv/
 .coverage.*
 htmlcov/
 .cache/
+
+# --- Local environment / secrets ---------------------------------------------
+# Real environment files are local-only; the annotated template is committed.
+.env
+.env.*
+!.env.example
 
 # --- Logs / temp -------------------------------------------------------------
 *.log

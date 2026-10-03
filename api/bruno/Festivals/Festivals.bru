@@ -1,0 +1,17 @@
+meta {
+  name: Festivals for a year
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/festivals
+  body: none
+  auth: none
+}
+
+params:query {
+  year: {{year}}
+  city: {{city}}
+  tradition: {{tradition}}
+}

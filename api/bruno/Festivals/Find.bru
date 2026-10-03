@@ -1,0 +1,17 @@
+meta {
+  name: Find next festival
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/find
+  body: none
+  auth: none
+}
+
+params:query {
+  name: Diwali
+  after: 2025-01-01
+  city: {{city}}
+}

@@ -1,0 +1,271 @@
+{
+  "info": {
+    "_postman_id": "b1f7c2a4-6d3e-4a9b-8c21-9f0e5d7a2b10",
+    "name": "Kalagana API",
+    "description": "Offline Hindu (Drik) panchang, muhurta, eclipse and festival dates.\n\nStart the server first:\n\n    python -m kalagana.server --port 8765\n\nThen set the `baseUrl` variable (default http://127.0.0.1:8765) and send any request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8765", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Meta",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] },
+            "description": "Service status and version."
+          },
+          "response": []
+        },
+        {
+          "name": "Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cities", "host": ["{{baseUrl}}"], "path": ["cities"] },
+            "description": "Built-in city table used for the `city` parameter."
+          },
+          "response": []
+        },
+        {
+          "name": "Ayanamsas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/ayanamsas", "host": ["{{baseUrl}}"], "path": ["ayanamsas"] },
+            "description": "Supported ayanamsa models and the default."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Panchang",
+      "item": [
+        {
+          "name": "Day panchang (Delhi, Janmashtami)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/day?date=2024-08-26&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["day"],
+              "query": [
+                { "key": "date", "value": "2024-08-26" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Full panchang: five limbs, sunrise/sunset, moonrise/moonset, eras and muhurta."
+          },
+          "response": []
+        },
+        {
+          "name": "Day panchang (custom coordinates)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/day?date=2026-11-08&lat=28.6139&lon=77.2090&tz=Asia/Kolkata",
+              "host": ["{{baseUrl}}"],
+              "path": ["day"],
+              "query": [
+                { "key": "date", "value": "2026-11-08" },
+                { "key": "lat", "value": "28.6139" },
+                { "key": "lon", "value": "77.2090" },
+                { "key": "tz", "value": "Asia/Kolkata" }
+              ]
+            },
+            "description": "Use lat/lon/tz instead of a built-in city."
+          },
+          "response": []
+        },
+        {
+          "name": "Day panchang (no muhurta)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/day?date=2024-03-20&city=ujjain&no_muhurta=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["day"],
+              "query": [
+                { "key": "date", "value": "2024-03-20" },
+                { "key": "city", "value": "ujjain" },
+                { "key": "no_muhurta", "value": "true" }
+              ]
+            },
+            "description": "Faster response without muhurta windows."
+          },
+          "response": []
+        },
+        {
+          "name": "Month summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/month?month=2024-10&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["month"],
+              "query": [
+                { "key": "month", "value": "2024-10" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "One summary row per day of the Gregorian month."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Festivals",
+      "item": [
+        {
+          "name": "Festivals for a year",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/festivals?year=2024&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["festivals"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "All festival dates for the year, computed from the rule table."
+          },
+          "response": []
+        },
+        {
+          "name": "Major festivals only (South tradition)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/festivals?year=2024&city=chennai&tradition=south&major_only=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["festivals"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "city", "value": "chennai" },
+                { "key": "tradition", "value": "south" },
+                { "key": "major_only", "value": "true" }
+              ]
+            },
+            "description": "Skip monthly observances and use the South Indian rule set."
+          },
+          "response": []
+        },
+        {
+          "name": "Find next Diwali",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/find?name=Diwali&after=2025-01-01&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["find"],
+              "query": [
+                { "key": "name", "value": "Diwali" },
+                { "key": "after", "value": "2025-01-01" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Next occurrence of a named festival on/after a date."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Eclipses for a year",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/eclipses?year=2024&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["eclipses"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Approximate eclipse windows (dates and rough type only)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Muhurta",
+      "item": [
+        {
+          "name": "Daily muhurta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/muhurta?date=2024-08-26&city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["muhurta"],
+              "query": [
+                { "key": "date", "value": "2024-08-26" },
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Rahu Kalam, Yamaganda, Gulika, Abhijit, Brahma, Durmuhurta, Choghadiya, Hora."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "item": [
+        {
+          "name": "400 - missing date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/day?city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["day"],
+              "query": [{ "key": "city", "value": "delhi" }]
+            },
+            "description": "Demonstrates the 400 error shape."
+          },
+          "response": []
+        },
+        {
+          "name": "400 - no location",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/day?date=2024-08-26",
+              "host": ["{{baseUrl}}"],
+              "path": ["day"],
+              "query": [{ "key": "date", "value": "2024-08-26" }]
+            },
+            "description": "Demonstrates the 400 error shape for a missing location."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

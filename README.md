@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🕉️ Kalagana · `panchang`
+<img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.png" alt="Kalagana logo" width="160" />
+
+# 🕉️ Kalagana
 
 **An offline, dependency-free Hindu (Drik) Panchang & festival calculator written in pure Python.**
 
@@ -23,7 +25,7 @@
 
 ## 📖 What is this?
 
-`panchang` (the package) / **Kalagana** (the project) is a Python library and command-line tool that computes a complete **Drik Panchang** — the five traditional limbs of the Hindu calendar — together with (eventually) the dates of Hindu festivals, for **any latitude, longitude and timezone**, in both **North (purnimanta)** and **South (amanta)** traditions.
+**Kalagana** is a Python library and command-line tool that computes a complete **Drik Panchang** — the five traditional limbs of the Hindu calendar — together with (eventually) the dates of Hindu festivals, for **any latitude, longitude and timezone**, in both **North (purnimanta)** and **South (amanta)** traditions.
 
 Everything is derived from **positional astronomy implemented in the code itself**, using the algorithms from Jean Meeus' *Astronomical Algorithms*. There are:
 
@@ -35,9 +37,12 @@ Everything is derived from **positional astronomy implemented in the code itself
 
 The same inputs always produce the same outputs — the calculation core is **pure and deterministic**.
 
+> **New in this version:** a rule-driven **festival engine** for Hindu (lunar/solar), **Islamic (Hijri)** and **fixed-date national/observance** days — 80+ festival rules plus monthly vrats — with per-group on/off switches and a `kind` filter (`festival` / `national` / `observance`).
+
 ## ✨ Highlights
 
 - 🌗 **Full five limbs** — Tithi (with paksha), Vara, Nakshatra (with pada), Yoga and Karana, each with exact **start and end times**.
+- 🎉 **Festivals from rules, never stored** — Hindu (lunar + solar sankranti), Islamic (Hijri), national holidays and fixed-date observances, plus monthly vrats.
 - ☀️ **Rise & set** — sunrise, sunset, moonrise, moonset and solar noon, with refraction and disc-limb corrections.
 - 🌐 **Location aware** — geodetic latitude/longitude + IANA timezone; ships with a built-in city table (no lookup service).
 - 📐 **Multiple ayanamsa** — Lahiri (default), Raman, KP, Yukteshwar and Fagan–Bradley.
@@ -45,7 +50,7 @@ The same inputs always produce the same outputs — the calculation core is **pu
 - 🐍 **Pure standard library** — targets Python **3.10+**.
 - 🔁 **Deterministic** — no I/O in the astronomy core; ideal for testing and caching.
 
-> **Status:** the astronomy foundation and the panchang limbs are implemented (Phases 1–2), and the calendar layer (masa) is in progress (Phase 3). The festival engine, eclipses, transits and CLI are on the [roadmap](#-roadmap).
+> **Status:** the astronomy foundation, panchang limbs, calendar structure, muhurta, the rule-driven festival engine and the CLI/API are implemented (Phases 1–4 and 6–7). Eclipses are an approximate detector (Phase 5, partial); precise Besselian-element circumstances and full planetary transits remain on the [roadmap](#-roadmap).
 
 ## 🎯 Why this exists
 
@@ -64,7 +69,7 @@ The design keeps a clean separation between **astronomy**, the **calendar**, and
 
 ```text
                    ┌───────────────────────────────────────────┐
-                   │                  panchang                  │
+                   │                  kalagana                  │
                    └───────────────────────────────────────────┘
                                        │
         ┌──────────────────────────────┼───────────────────────────────┐
@@ -81,37 +86,118 @@ The design keeps a clean separation between **astronomy**, the **calendar**, and
   limbs   (tithi, vara, …)              primitives above
 ```
 
-Implemented today: `julian`, `sun`, `moon`, `ayanamsa`, `solver`, `sunrise`, `limbs`, `calendar_month`, `location`.
+Implemented today: `julian`, `sun`, `moon`, `ayanamsa`, `solver`, `sunrise`, `limbs`, `calendar_month`, `eras`, `muhurta`, `hijri`, `festivals` (rules + engine), `api`, `cli` and `location`.
 
 ## 📋 Requirements
 
 - **Python 3.10 or newer** (developed and tested on 3.14).
 - **No third-party packages.** The project uses only the standard library (`math`, `datetime`, `dataclasses`, `enum`, `argparse`, `json`, `functools`, `zoneinfo`).
-- *Optional:* the [`tzdata`](https://pypi.org/project/tzdata/) package on Windows, where the stdlib `zoneinfo` needs it for full timezone-database support. Without it, `panchang` falls back to a built-in standard-offset table (exact for India, approximate for zones that observe DST).
+- *Optional:* the [`tzdata`](https://pypi.org/project/tzdata/) package on Windows, where the stdlib `zoneinfo` needs it for full timezone-database support. Without it, Kalagana falls back to a built-in standard-offset table (exact for India, approximate for zones that observe DST).
 
 ## 🚀 Installation
 
-The package is not yet published to PyPI. Clone and use it directly:
+**From PyPI** (recommended) — no dependencies are pulled in:
+
+```bash
+pip install kalagana
+```
+
+On Windows, add the optional timezone database for full IANA support (India is exact either way):
+
+```bash
+pip install "kalagana[tz]"
+```
+
+**From source** (development):
 
 ```bash
 git clone https://github.com/mitjangid/Kalagana.git
 cd Kalagana
 ```
 
-There is nothing to build — it is pure Python. Verify the install:
+There is nothing to build — it is pure Python. Verify either install:
 
 ```bash
-python -c "import panchang; print(panchang.__version__)"
+python -c "import kalagana; print(kalagana.__version__)"
 # 0.1.0
+```
+
+## 🏁 First-time setup in 60 seconds
+
+Kalagana needs **no configuration and no network**. The three steps below are all you need:
+
+```bash
+# 1. Install
+pip install kalagana
+
+# 2. (optional) set your default city, so you can omit --city every time
+cp .env.example .env          # then edit KALAGANA_CITY and friends
+
+# 3. Run something
+kalagana day 2026-11-08 --city delhi
+```
+
+That prints the full panchang for a date. Prefer festivals?
+
+```bash
+kalagana festivals 2026 --city delhi --major-only
+```
+
+> `.env` is optional and git-ignored; a variable already present in the real environment is never overwritten by it. See [Configuration](#-configuration).
+
+## 🧑💻 Command line
+
+Installing the package adds a `kalagana` command (equivalent to `python -m kalagana`). Every data subcommand takes a location (`--city`, or `--lat`/`--lon`) and `--format text|json|csv`.
+
+```bash
+kalagana --help
+```
+
+| Subcommand | What it does | Example |
+|---|---|---|
+| `day <date>` | Full panchang for one date | `kalagana day 2026-11-08 --city delhi` |
+| `month <YYYY-MM>` | Day-by-day summary for a month | `kalagana month 2026-11 --city mumbai` |
+| `festivals <year>` | Computed festivals for a year | `kalagana festivals 2026 --major-only` |
+| `eclipses <year>` | Approximate eclipses | `kalagana eclipses 2026 --city delhi` |
+| `muhurta <date>` | Rahu Kalam, Choghadiya, Hora, … | `kalagana muhurta 2026-11-08 --city delhi` |
+| `find <name>` | Next date of a named festival | `kalagana find Diwali --date 2025-01-01` |
+| `cities` | List the built-in city table | `kalagana cities` |
+| `serve` | Start the offline REST API | `kalagana serve --port 8765` |
+
+Common options (also accepted by `python -m kalagana`):
+
+```bash
+--city NAME            # built-in city key (see `kalagana cities`)
+--lat D --lon D        # explicit coordinates instead of a city
+--tz Asia/Kolkata      # override the timezone
+--tradition north      # north | south | tamil | telugu | kannada | malayalam | bengali | odia | gujarati | marathi
+--ayanamsa lahiri      # lahiri | raman | kp | yukteshwar | fagan_bradley
+--format text|json|csv # output format
+```
+
+Examples:
+
+```bash
+# JSON output, piped to jq
+kalagana day 2026-11-08 --city delhi --format json | jq .sunrise
+
+# Festivals only for a region, skipping monthly observances
+kalagana festivals 2026 --tradition tamil --major-only
+
+# National holidays only (kind filter)
+kalagana festivals 2026 --kind national
+
+# Recompute without Islamic festivals
+kalagana festivals 2026 --no-islamic
 ```
 
 ## ⚡ Quick start
 
 ```python
 from datetime import date
-from panchang.location import Location
-from panchang.sunrise import sunrise_sunset, solar_noon
-from panchang.limbs import day_limbs
+from kalagana.location import Location
+from kalagana.sunrise import sunrise_sunset, solar_noon
+from kalagana.limbs import day_limbs
 
 loc = Location(name="Delhi", lat=28.6139, lon=77.2090, tz="Asia/Kolkata")
 
@@ -142,31 +228,89 @@ Tithi    : Amavasya               11:30 → 06:40
 Nakshatra: Swati                  06:39 → 06:40
 ```
 
+## 🎉 Festivals
+
+Festival dates are produced by a generic engine from a table of rules — never stored. Rules come in four groups:
+
+| Group | `system` | Examples |
+|---|---|---|
+| Hindu lunar | `lunar` | Diwali, Holi, Janmashtami, Ganesh Chaturthi |
+| Solar sankranti | `solar` | Makar Sankranti, Pongal, Vishu, Baisakhi |
+| Islamic (Hijri) | `hijri` | Eid al-Fitr, Eid al-Adha, Milad-un-Nabi, Muharram |
+| Fixed Gregorian | `fixed` | Republic Day, Independence Day, Teachers' Day |
+
+```python
+from datetime import date
+from kalagana import festivals_for_year, national_holidays, find_next, city_lookup
+
+delhi = city_lookup("Delhi")
+for f in festivals_for_year(2026, delhi, include_monthly=False, kinds=("national",)):
+    print(f.date, f.name, f.kind)
+# 2026-01-26 Republic Day national
+# 2026-08-15 Independence Day national
+# 2026-10-02 Gandhi Jayanti national
+
+national_holidays(2026, delhi)                       # the three gazetted holidays
+find_next("Eid al-Fitr", date(2026, 1, 1), delhi)    # 2026-03-20
+```
+
+Every occurrence carries a `kind` — `festival`, `national` or `observance`. Whole groups can be switched off with `include_islamic=False` / `include_fixed=False` (or the `KALAGANA_INCLUDE_*` environment variables).
+
+> Islamic dates use the **tabular (arithmetic)** Islamic calendar, so they may differ by a day or two from the locally sighted date.
+
+## 🌐 REST API
+
+Kalagana also ships a small **offline REST API** built on the standard-library `http.server` (no web framework, no network):
+
+```bash
+python -m kalagana.server --port 8765      # or: python -m kalagana serve
+```
+
+```bash
+curl -s "http://127.0.0.1:8765/day?date=2024-08-26&city=delhi"
+curl -s "http://127.0.0.1:8765/find?name=Diwali&after=2025-01-01&city=delhi"
+```
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | status & version |
+| `GET /cities` | built-in city table |
+| `GET /ayanamsas` | supported ayanamsa models |
+| `GET /day?date=&city=` | full panchang for one date |
+| `GET /month?month=YYYY-MM` | day-by-day month summary |
+| `GET /festivals?year=` | rule-derived festival dates (`&kind=national`, `&no_islamic=true`, `&no_fixed=true`, `&major_only=true`) |
+| `GET /eclipses?year=` | approximate eclipses |
+| `GET /muhurta?date=` | daily muhurta windows |
+| `GET /find?name=&after=` | next occurrence of a festival |
+
+Full reference: **[API_README.md](API_README.md)**. Import files for Postman, Insomnia, Bruno and OpenAPI tooling live in [`api/`](api).
+
 ## 📚 Module reference
 
 | Module | Purpose |
 |---|---|
-| `panchang.julian` | Julian Day conversion (Gregorian/Julian), **ΔT** (Espenak & Meeus polynomials), Greenwich mean/apparent sidereal time. |
-| `panchang.sun` | Solar apparent longitude, right ascension, declination, equation of time (Meeus ch. 25 & 28). |
-| `panchang.moon` | Lunar longitude/latitude/distance via the full Meeus ch. 47 periodic-term tables, plus RA/dec. |
-| `panchang.ayanamsa` | Ayanamsa selection and propagation (Lahiri default) using the IAU general precession polynomial. |
-| `panchang.solver` | Generic angle root finder (`solve_angle`), zero finder (`find_crossing`), `bisect`, `next_crossing`. |
-| `panchang.sunrise` | Sunrise, sunset, moonrise, moonset, solar noon (scan + bisection on altitude). |
-| `panchang.limbs` | The five limbs: `elongation`, tithi, nakshatra (+pada), yoga, karana, vara, and `day_limbs()`. |
-| `panchang.calendar_month` | Lunar month (masa): new/full-moon finders, sankranti, adhika/kshaya detection, amanta vs purnimanta, paksha. |
-| `panchang.location` | `Location` dataclass, built-in `CITIES` table, timezone resolution with fallback. |
+| `kalagana.julian` | Julian Day conversion (Gregorian/Julian), **ΔT** (Espenak & Meeus polynomials), Greenwich mean/apparent sidereal time. |
+| `kalagana.sun` | Solar apparent longitude, right ascension, declination, equation of time (Meeus ch. 25 & 28). |
+| `kalagana.moon` | Lunar longitude/latitude/distance via the full Meeus ch. 47 periodic-term tables, plus RA/dec. |
+| `kalagana.ayanamsa` | Ayanamsa selection and propagation (Lahiri default) using the IAU general precession polynomial. |
+| `kalagana.solver` | Generic angle root finder (`solve_angle`), zero finder (`find_crossing`), `bisect`, `next_crossing`. |
+| `kalagana.sunrise` | Sunrise, sunset, moonrise, moonset, solar noon (scan + bisection on altitude). |
+| `kalagana.limbs` | The five limbs: `elongation`, tithi, nakshatra (+pada), yoga, karana, vara, and `day_limbs()`. |
+| `kalagana.calendar_month` | Lunar month (masa): new/full-moon finders, sankranti, adhika/kshaya detection, amanta vs purnimanta, paksha. |
+| `kalagana.hijri` | Tabular (arithmetic) Islamic calendar: Hijri → Gregorian conversion for the Islamic festivals. |
+| `kalagana.location` | `Location` dataclass, built-in `CITIES` table, timezone resolution with fallback. |
 
 ### Key entry points
 
 ```python
-from panchang.limbs import (
+from kalagana.limbs import (
     tithi_number, tithi_name, nakshatra_number, nakshatra_pada,
     yoga_number, karana_number, karana_name, vara_name, day_limbs,
 )
-from panchang.sunrise import sunrise_sunset, moonrise_moonset, solar_noon
-from panchang.calendar_month import masa_at, paksha_at, purnimanta_name
-from panchang.julian import gregorian_to_jd, datetime_to_jd, jd_to_datetime, delta_t
-from panchang.ayanamsa import ayanamsa_degrees, SUPPORTED
+from kalagana.sunrise import sunrise_sunset, moonrise_moonset, solar_noon
+from kalagana.calendar_month import masa_at, paksha_at, purnimanta_name
+from kalagana.julian import gregorian_to_jd, datetime_to_jd, jd_to_datetime, delta_t
+from kalagana.ayanamsa import ayanamsa_degrees, SUPPORTED
 ```
 
 ## 🔬 Accuracy & methodology
@@ -187,7 +331,7 @@ Every value is computed from a documented source:
 ## 🧭 Ayanamsa
 
 ```python
-from panchang.ayanamsa import ayanamsa_degrees, SUPPORTED
+from kalagana.ayanamsa import ayanamsa_degrees, SUPPORTED
 print(SUPPORTED)
 # ('fagan_bradley', 'kp', 'lahiri', 'raman', 'yukteshwar')
 
@@ -198,20 +342,20 @@ ayanamsa_degrees(2451545.0, "lahiri")   # ~23.8531° at J2000.0
 
 ## 🏙️ Built-in cities
 
-`panchang.location.CITIES` ships with **30+ ready-to-use locations** (Delhi, Mumbai, Chennai, Kolkata, Ujjain, Varanasi, Bikaner, Kota, Bengaluru, Hyderabad, Jaipur, and overseas reference points such as London, New York, Dubai, Singapore, Sydney, Toronto and Kathmandu). Look one up by name:
+`kalagana.location.CITIES` ships with **30+ ready-to-use locations** (Delhi, Mumbai, Chennai, Kolkata, Ujjain, Varanasi, Bikaner, Kota, Bengaluru, Hyderabad, Jaipur, and overseas reference points such as London, New York, Dubai, Singapore, Sydney, Toronto and Kathmandu). Look one up by name:
 
 ```python
-from panchang.location import city_lookup
+from kalagana.location import city_lookup
 loc = city_lookup("Varanasi")
 ```
 
-## 🗓️ Calendar structure (in progress)
+## 🗓️ Calendar structure
 
-`panchang.calendar_month` resolves the **lunar month (masa)** and paksha, detecting **adhika** (extra) and **kshaya** (lost) months, in both the **amanta** (South) and **purnimanta** (North) conventions.
+`kalagana.calendar_month` resolves the **lunar month (masa)** and paksha, detecting **adhika** (extra) and **kshaya** (lost) months, in both the **amanta** (South) and **purnimanta** (North) conventions.
 
 ```python
-from panchang.julian import gregorian_to_jd
-from panchang.calendar_month import masa_at, paksha_at, purnimanta_name
+from kalagana.julian import gregorian_to_jd
+from kalagana.calendar_month import masa_at, paksha_at, purnimanta_name
 
 jd = gregorian_to_jd(2026, 11, 8)            # Julian Day for 2026-11-08
 m = masa_at(jd, ayanamsa="lahiri")
@@ -232,23 +376,23 @@ Kartika
 
 ## 🗺️ Roadmap
 
-Kalagana is being built phase by phase against a detailed specification (`Docs/hindu_panchang_prompt.md`).
+Kalagana is being built phase by phase against a detailed specification (`docs/hindu_panchang_prompt.md`).
 
 | Phase | Scope | Status |
 |---|---|---|
 | **1. Astronomy foundation** | Julian Day, ΔT, sidereal time, Sun, Moon, Lahiri ayanamsa, generic solver | ✅ Done |
 | **2. Panchang limbs** | Tithi, vara, nakshatra (+pada), yoga, karana, sunrise/sunset/moonrise | ✅ Done |
-| **3. Calendar structure** | Masa, paksha, adhika/kshaya masa, amanta/purnimanta, ritu, ayana, samvat eras | 🚧 In progress |
-| **4. Muhurta & yogas** | Rahu Kalam, Gulika, Abhijit, Brahma Muhurta, Choghadiya, Hora, Siddhi yogas | ⏳ Planned |
-| **5. Eclipses & transits** | Solar/lunar eclipses + Sutak, planetary ingresses, retrograde, combustion | ⏳ Planned |
-| **6. Festival engine** | Data-driven `FestivalRule` table + tie-break policies + regional variants | ⏳ Planned |
-| **7. Interfaces** | Public API, `day` / `month` / `year` / `festivals` / `eclipses` / `find` CLI, JSON/CSV, multi-language names | ⏳ Planned |
+| **3. Calendar structure** | Masa, paksha, adhika/kshaya masa, amanta/purnimanta, ritu, ayana, samvat eras | ✅ Done |
+| **4. Muhurta & yogas** | Rahu Kalam, Gulika, Abhijit, Brahma Muhurta, Choghadiya, Hora, Durmuhurta | ✅ Done |
+| **5. Eclipses & transits** | Solar/lunar eclipse detector (dates & rough type); precise Besselian elements + planetary transits pending | 🚧 Partial |
+| **6. Festival engine** | Data-driven `FestivalRule` table + tie-break policies + regional variants; Hindu, Islamic (Hijri), national-holiday and fixed-date rule groups | ✅ Done |
+| **7. Interfaces** | Public API, `day` / `month` / `festivals` / `eclipses` / `muhurta` / `find` CLI, JSON/CSV | ✅ Done |
 
 ## 📂 Project structure
 
 ```text
 Kalagana/
-├── panchang/               # the library (pure stdlib)
+├── kalagana/               # the library (pure stdlib)
 │   ├── __init__.py         # package metadata & re-exports
 │   ├── julian.py           # JD conversion, ΔT, sidereal time
 │   ├── sun.py              # solar coordinates & equation of time
@@ -258,12 +402,54 @@ Kalagana/
 │   ├── sunrise.py          # rise / set / transit
 │   ├── limbs.py            # tithi, vara, nakshatra, yoga, karana
 │   ├── calendar_month.py   # masa, paksha, adhika/kshaya, amanta/purnimanta
+│   ├── eras.py             # Vikram, Shaka, samvatsara, ritu, ayana
+│   ├── muhurta.py          # Rahu Kalam, Choghadiya, Hora, Durmuhurta
+│   ├── hijri.py            # tabular Islamic (Hijri) calendar conversion
+│   ├── festivals/          # rule table + engine (data-driven dates)
+│   ├── api.py              # Panchang object, daily_panchang, eclipses
+│   ├── cli.py              # command line interface
+│   ├── server.py           # offline REST API (stdlib http.server)
+│   ├── config.py           # optional environment/.env configuration
+│   ├── selftest.py         # python -m kalagana.selftest
 │   └── location.py         # Location + built-in city table
-├── Docs/
+├── api/                    # OpenAPI + Postman + Insomnia + Bruno import files
+├── tests/                  # unittest suite + reference dates
+├── scripts/
+│   └── release.py          # version bump / build / tag / GitHub release
+├── .github/workflows/      # CI, release and container automation
+├── assets/
+│   └── logo.png            # project logo
+├── docs/
 │   └── hindu_panchang_prompt.md   # full project specification
+├── API_README.md           # detailed API reference
+├── .env.example            # annotated configuration template
+├── Dockerfile              # container image for the REST API
+├── MANIFEST.in             # sdist contents
 ├── .gitignore
 └── README.md
 ```
+
+## ⚙️ Configuration
+
+Kalagana needs **no configuration** to run. Optional settings are read from the environment and from a local `.env` file, parsed by [`kalagana/config.py`](kalagana/config.py) with **no** `python-dotenv` dependency:
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+KALAGANA_HOST=127.0.0.1     # REST API bind address
+KALAGANA_PORT=8765          # REST API port
+KALAGANA_CITY=delhi         # default location (or KALAGANA_LAT / KALAGANA_LON)
+KALAGANA_TZ=Asia/Kolkata
+KALAGANA_AYANAMSA=lahiri    # lahiri | raman | kp | yukteshwar | fagan_bradley
+KALAGANA_TRADITION=north
+KALAGANA_INCLUDE_MONTHLY=true    # monthly vrats (Ekadashi, Purnima, ...)
+KALAGANA_INCLUDE_ISLAMIC=true    # Islamic (Hijri) festivals
+KALAGANA_INCLUDE_FIXED=true      # national holidays + fixed-date observances
+```
+
+The full annotated list — including `KALAGANA_LOG_REQUESTS`, `KALAGANA_FIND_YEARS`, `KALAGANA_LANG` and `KALAGANA_STRICT` — is in [`.env.example`](.env.example). Read from code with `kalagana.config.load_settings()`. A variable already present in the environment is never overwritten by `.env`, and `.env` itself is git-ignored.
 
 ## 🛠️ Development
 
@@ -271,10 +457,10 @@ Pure standard library, so there's nothing to compile. Run a module directly to e
 
 ```bash
 # sanity check: import + version
-python -c "import panchang; print(panchang.__version__)"
+python -c "import kalagana; print(kalagana.__version__)"
 
 # today's vara for a city
-python -c "from datetime import date; from panchang.location import city_lookup; from panchang.limbs import day_limbs; print(day_limbs(date.today(), city_lookup('Delhi'))['vara'])"
+python -c "from datetime import date; from kalagana.location import city_lookup; from kalagana.limbs import day_limbs; print(day_limbs(date.today(), city_lookup('Delhi'))['vara'])"
 ```
 
 ### Conventions
@@ -283,6 +469,39 @@ python -c "from datetime import date; from panchang.location import city_lookup;
 - The astronomy core is **pure** — no I/O, no global state.
 - Units are explicit: longitudes in **degrees**, distances in **km**, times as **Julian Days (TT/UT)** or timezone-aware `datetime`.
 - Functions stay small, and astronomy stays separate from calendar and festival rules.
+
+## 🚀 Releasing
+
+The version lives in `pyproject.toml` and `kalagana/__init__.py`; the helper keeps both in sync. It uses only the standard library.
+
+```bash
+python scripts/release.py current                  # show the current version
+python scripts/release.py bump patch               # 0.1.0 -> 0.1.1 (rewrites both files)
+python scripts/release.py build                    # sdist + wheel into dist/   (needs: pip install build)
+python scripts/release.py tag --push               # annotated tag vX.Y.Z and push
+python scripts/release.py gh-release               # GitHub Release with dist/ assets (needs: gh)
+python scripts/release.py --dry-run release --bump patch --push --gh
+```
+
+`--dry-run` prints the commands instead of running them, and **nothing is pushed without `--push`**. The working tree must be clean before a bump or a tag (override with `--allow-dirty`).
+
+### Automation
+
+| Workflow | Trigger | Result |
+|---|---|---|
+| `ci.yml` | push / PR | self-test + unit tests on Ubuntu, Windows and macOS, Python 3.10 and 3.13 |
+| `release.yml` | tag `v*` | builds sdist + wheel, creates the **GitHub Release**, publishes to **PyPI** (trusted publishing) |
+| `container.yml` | push / tag | publishes the Docker image to **`ghcr.io/<owner>/kalagana`** |
+
+> **Note on the GitHub “Packages” tab:** GitHub Packages does **not** host Python distributions, so the Python package is published to **PyPI**. The **Packages** section fills from the container image built by `container.yml`. PyPI publishing uses a [Trusted Publisher](https://docs.pypi.org/trusted-publishers/) — configure it for this repo, the `release.yml` workflow, and the `pypi` environment; no API token is stored. Use the workflow's manual `testpypi` option to rehearse first.
+
+### Container
+
+```bash
+docker build -t kalagana .
+docker run --rm -p 8765:8765 -e KALAGANA_CITY=mumbai kalagana
+curl http://127.0.0.1:8765/health
+```
 
 ## 🤝 Contributing
 
