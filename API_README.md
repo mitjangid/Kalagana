@@ -1,5 +1,7 @@
 # Kalagana API Reference
 
+*Offline **Drik Panchang / Panchangam**, tithi, nakshatra, muhurat and Hindu, Islamic & national festival calculations — as a Python library and a local REST API.*
+
 Kalagana exposes **two** APIs over the same pure, offline calculation core:
 
 1. a **Python library** (`import kalagana`) —

@@ -2,11 +2,11 @@
 
 <img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.jpg" alt="Kalagana logo" width="160" />
 
-# 🕉️ Kalagana
+# 🕉️ Kalagana — Official Drik Panchang & Panchangam for Python
 
-**An offline, dependency-free Hindu (Drik) Panchang & festival calculator in pure Python.**
+**The official, offline, dependency-free Python library and CLI for the Hindu (Drik) Panchang, Panchangam and the Indian festival calendar.**
 
-*Tithi, Vara, Nakshatra, Yoga, Karana, sunrise/sunset, ayanamsa, muhurta and festival dates — computed from first principles, with no network, no database and no downloaded ephemeris files.*
+*Compute Tithi, Vara, Nakshatra, Yoga, Karana, sunrise/sunset, ayanamsa, muhurat (muhurta) and the dates of Hindu, Islamic and national festivals — for any city in India or worldwide — from first principles, with no network, no database and no downloaded ephemeris files.*
 
 [![PyPI](https://img.shields.io/pypi/v/kalagana.svg)](https://pypi.org/project/kalagana/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -20,7 +20,7 @@
 
 ## What is Kalagana?
 
-**Kalagana** computes a complete **Drik Panchang** — the five traditional limbs of the Hindu calendar — together with the dates of Hindu, Islamic, national and observances festivals, for **any latitude, longitude and timezone**, in both **North (purnimanta)** and **South (amanta)** traditions.
+**Kalagana** computes a complete **Drik Panchang** (also written *panchangam*, *panjika* or *Hindu calendar*) — the five traditional limbs of the Hindu calendar — together with the dates of **Hindu festivals, Islamic (Hijri) festivals and Indian national holidays**, for **any latitude, longitude and timezone**, in both **North (purnimanta)** and **South (amanta)** traditions.
 
 Everything is derived from **positional astronomy implemented in the code itself**, using the algorithms from Jean Meeus' *Astronomical Algorithms*. There are:
 
@@ -31,6 +31,10 @@ Everything is derived from **positional astronomy implemented in the code itself
 - ✅ just the Python standard library
 
 The same inputs always produce the same outputs — the calculation core is **pure and deterministic**.
+
+### What you can compute
+
+Panchang (tithi, nakshatra, yoga, karana, vara), sunrise/sunset and moonrise/moonset, muhurat (Rahu Kalam, Yamaganda, Gulika, Abhijit, Choghadiya, Hora, Brahma Muhurta, Durmuhurta), Vikram Samvat / Shaka eras, ritu and ayana, and a rule-driven calendar of **Hindu festivals** (Diwali, Holi, Navratri, Dussehra, Ganesh Chaturthi, Krishna Janmashtami, Ekadashi, Karwa Chauth, Chhath Puja, Makar Sankranti, Pongal, Onam …), **Islamic festivals** (Eid al-Fitr, Eid al-Adha, Muharram, Milad-un-Nabi …) and **Indian national holidays** — for any date, past or decades ahead.
 
 ## ✨ Highlights
 
@@ -225,6 +229,8 @@ Limb boundaries are located to **one second of time**. Eclipses are computed by 
 ## ⚠️ Disclaimer
 
 Panchang calculations encode **tradition and convention** (ayanamsa choice, masa system, tie-break rules), and Islamic dates use a tabular calendar. Regional and sampradaya differences exist and are treated as first-class options rather than bugs.
+
+Kalagana is an independent, open-source project. Here "official" means only that this is the project's canonical package on PyPI — Kalagana is **not** affiliated with, endorsed by, or connected to drikpanchang.com, any government body, or any religious institution.
 
 ## 📄 License
 
