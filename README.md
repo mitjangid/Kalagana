@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.png" alt="Kalagana logo" width="160" />
+<img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.jpg" alt="Kalagana logo" width="160" />
 
 # 🕉️ Kalagana
 
@@ -418,7 +418,8 @@ Kalagana/
 │   └── release.py          # version bump / build / tag / GitHub release
 ├── .github/workflows/      # CI, release and container automation
 ├── assets/
-│   └── logo.png            # project logo
+│   ├── logo.jpg            # project logo (white background, used in README)
+│   └── logo.png            # transparent-background logo
 ├── docs/
 │   └── hindu_panchang_prompt.md   # full project specification
 ├── API_README.md           # detailed API reference
