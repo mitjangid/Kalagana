@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kalagana"
-version = "0.1.1"
+version = "0.1.2"
 description = "Official offline Drik Panchang & Panchangam calculator for Python: tithi, nakshatra, muhurat, sunrise/sunset and Hindu, Islamic & national festival dates."
 readme = "README.md"
 requires-python = ">=3.10"
