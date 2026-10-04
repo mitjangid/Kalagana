@@ -49,8 +49,12 @@
 .copilot/
 
 # --- Local-only documentation / specs ----------------------------------------
-# Working specs / prompt documents kept locally, not published to GitHub.
-docs/
+# Working prompts/scratch specs stay local; the app product docs are versioned.
+docs/*
+!docs/plans/
+!docs/plans/**
+!docs/sprints/
+!docs/sprints/**
 
 # --- GitHub automation -------------------------------------------------------
 # .github/ is a real project folder (CI, releases) -- keep it despite ".*/" above.

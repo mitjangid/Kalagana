@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kalagana</title>
+<link rel="icon" href="/logo.png" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <img class="logo" src="/logo.png" alt="Kalagana logo" />
+    <div class="brand-text">
+      <h1>Kalagana</h1>
+      <p class="tag">Offline Drik Panchang, Kundali &amp; Rashifal</p>
+    </div>
+  </div>
+  <div class="controls">
+    <label>City<select id="city"></select></label>
+    <label>Ayanamsa<select id="ayanamsa">
+      <option value="lahiri" selected>lahiri</option>
+      <option value="raman">raman</option>
+      <option value="kp">kp</option>
+      <option value="yukteshwar">yukteshwar</option>
+      <option value="fagan_bradley">fagan_bradley</option>
+    </select></label>
+    <label>Tradition<select id="tradition">
+      <option value="north" selected>north</option>
+      <option value="south">south</option>
+      <option value="tamil">tamil</option>
+      <option value="telugu">telugu</option>
+      <option value="kannada">kannada</option>
+      <option value="malayalam">malayalam</option>
+      <option value="bengali">bengali</option>
+      <option value="odia">odia</option>
+      <option value="gujarati">gujarati</option>
+      <option value="marathi">marathi</option>
+    </select></label>
+    <button id="btn-loc" class="ghost small" type="button">Custom location</button>
+    <span id="status" class="status">connecting…</span>
+  </div>
+  <div class="custom-loc" id="custom-loc" hidden>
+    <label>Latitude<input id="lat" type="number" step="0.0001" placeholder="28.6139" /></label>
+    <label>Longitude<input id="lon" type="number" step="0.0001" placeholder="77.2090" /></label>
+    <label>Timezone<input id="tz" type="text" placeholder="Asia/Kolkata" /></label>
+    <span class="muted">When lat &amp; lon are set they override the city for every calculation.</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="check" class="active">Check dates &amp; samples</button>
+  <button data-tab="kundali">Kundali</button>
+  <button data-tab="rashifal">Rashifal</button>
+  <button data-tab="year">Year calendar</button>
+</nav>
+
+<main>
+  <section id="check" class="panel active">
+    <div class="grid">
+      <div class="card">
+        <h2>Panchang for a date</h2>
+        <div class="row">
+          <input type="date" id="check-date" />
+          <select id="month-system" title="Lunar month naming">
+            <option value="purnimanta" selected>purnimanta</option>
+            <option value="amanta">amanta</option>
+          </select>
+          <button id="btn-day">Compute</button>
+          <button id="btn-day-muh" class="ghost">With muhurta</button>
+        </div>
+        <div id="day-out" class="out"></div>
+      </div>
+
+      <div class="card">
+        <h2>Muhurta, Choghadiya &amp; Hora</h2>
+        <div class="row">
+          <input type="date" id="muh-date" />
+          <button id="btn-muh">Show</button>
+        </div>
+        <p class="muted">Rahu Kalam, Yamaganda, Gulika, Abhijit, Brahma Muhurta, Durmuhurta, day/night Choghadiya and planetary Hora.</p>
+        <div id="muh-out" class="out"></div>
+      </div>
+
+      <div class="card">
+        <h2>Find the next festival</h2>
+        <div class="row">
+          <input type="text" id="find-name" placeholder="e.g. Diwali" value="Diwali" />
+          <input type="date" id="find-after" />
+          <button id="btn-find">Find</button>
+        </div>
+        <div id="find-out" class="out"></div>
+      </div>
+
+      <div class="card">
+        <h2>Eclipses for a year</h2>
+        <div class="row">
+          <input type="number" id="ecl-year" min="1900" max="2100" />
+          <button id="btn-ecl">List eclipses</button>
+        </div>
+        <p class="muted">Approximate detector — correct eclipse dates, rough type only.</p>
+        <div id="ecl-out" class="out"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Festivals for a year</h2>
+        <div class="row">
+          <input type="number" id="fest-year" min="1900" max="2100" />
+          <label class="inline">Kind
+            <select id="fest-kind">
+              <option value="" selected>all</option>
+              <option value="festival">festivals</option>
+              <option value="national">national holidays</option>
+              <option value="observance">observances</option>
+            </select>
+          </label>
+          <label class="inline"><input type="checkbox" id="fest-major" /> major only</label>
+          <label class="inline"><input type="checkbox" id="fest-islamic" checked /> Islamic</label>
+          <label class="inline"><input type="checkbox" id="fest-fixed" checked /> fixed-date</label>
+          <button id="btn-fest">List festivals</button>
+        </div>
+        <div id="fest-out" class="out"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Month view (day by day)</h2>
+        <div class="row">
+          <input type="month" id="month-input" />
+          <button id="btn-month">Show month</button>
+        </div>
+        <div id="month-out" class="out"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Sample checks</h2>
+        <p class="muted">Runs a fixed set of requests against every endpoint and reports pass/fail.
+        Run the server, then press the button.</p>
+        <button id="btn-samples">Run all samples</button>
+        <div id="samples-out" class="out"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kundali" class="panel">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Kundali (birth chart)</h2>
+        <div class="row">
+          <label class="inline">Date<input type="date" id="k-date" /></label>
+          <label class="inline">Time<input type="time" id="k-time" /></label>
+          <label class="inline">Chart format
+            <select id="k-format">
+              <option value="north" selected>North Indian</option>
+              <option value="south">South Indian</option>
+              <option value="east">East Indian (Bengali)</option>
+            </select>
+          </label>
+          <label class="inline">Dasha
+            <select id="k-depth">
+              <option value="1">mahadasha</option>
+              <option value="2" selected>+ antardasha</option>
+              <option value="3">+ pratyantardasha</option>
+            </select>
+          </label>
+          <button id="btn-kundali">Compute kundali</button>
+        </div>
+        <p class="muted">Uses the city / location chosen above. All three Indian chart formats, 16 divisional charts, Avakhada and Vimshottari dasha.</p>
+        <div id="kundali-out" class="out"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Kundali matching (Guna Milana)</h2>
+        <div class="row">
+          <label class="inline">Boy date<input type="date" id="m-boy-date" /></label>
+          <label class="inline">Time<input type="time" id="m-boy-time" /></label>
+          <label class="inline">Girl date<input type="date" id="m-girl-date" /></label>
+          <label class="inline">Time<input type="time" id="m-girl-time" /></label>
+          <button id="btn-match">Match</button>
+        </div>
+        <p class="muted">Both charts use the city / location chosen above. Ashtakoota out of 36, plus Mangal dosha.</p>
+        <div id="match-out" class="out"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rashifal" class="panel">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Rashifal</h2>
+        <div class="row">
+          <label class="inline">Date<input type="date" id="r-date" /></label>
+          <label class="inline">Rashi
+            <select id="r-rashi"><option value="" selected>all 12 rashis</option></select>
+          </label>
+          <button id="btn-rashifal">Show rashifal</button>
+        </div>
+        <p class="muted">Rule-based guidance from the classical gochara (transit) method, read from the Moon sign. Choose a rashi by name, or leave it on all 12.</p>
+        <div id="rashifal-out" class="out"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="year" class="panel">
+    <div class="row year-bar">
+      <label>Year<select id="year-select"></select></label>
+      <label>Kind
+        <select id="year-kind">
+          <option value="">all</option>
+          <option value="festival">festivals</option>
+          <option value="national">national holidays</option>
+          <option value="observance">observances</option>
+        </select>
+      </label>
+      <label class="inline"><input type="checkbox" id="year-major" /> major only (skip monthly vrats)</label>
+      <label class="inline"><input type="checkbox" id="year-islamic" checked /> Islamic</label>
+      <label class="inline"><input type="checkbox" id="year-fixed" checked /> fixed-date</label>
+      <span id="year-count" class="muted"></span>
+    </div>
+    <div id="calendar" class="calendar"></div>
+  </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
