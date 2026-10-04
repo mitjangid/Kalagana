@@ -20,6 +20,9 @@ Endpoints (all GET, JSON)
 ``/eclipses?year=``          approximate eclipses for a year
 ``/muhurta?date=``           daily muhurta windows
 ``/find?name=&after=``       next occurrence of a named festival
+``/kundali?date=&time=``     birth chart (grahas, houses, vargas, dasha)
+``/match?...``               kundali matching (Guna Milana) for two people
+``/rashifal?date=&rashi=``   transit-based daily rashifal for the 12 rashis
 ==========================  ==================================================
 
 Location is chosen with ``city=`` (a built-in name) or ``lat=`` + ``lon=``
@@ -40,7 +43,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Dict, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
@@ -57,7 +60,6 @@ __all__ = ["KalaganaAPI", "create_server", "main", "DEFAULT_HOST", "DEFAULT_PORT
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-
 
 class ApiError(Exception):
     """An error that maps to an HTTP status code and JSON message."""
@@ -89,6 +91,20 @@ def _parse_date(value: str) -> date:
         raise ApiError(400, f"Invalid date {value!r}; expected YYYY-MM-DD") from exc
 
 
+def _parse_when(p: Dict[str, str], prefix: str = "") -> datetime:
+    """Build a naive local birth datetime from ``<prefix>date`` / ``<prefix>time``."""
+    key = f"{prefix}_date" if prefix else "date"
+    d = _parse_date(_require(p, key))
+    raw_time = p.get(f"{prefix}_time") if prefix else p.get("time")
+    if not raw_time:
+        return datetime(d.year, d.month, d.day, 12, 0)
+    try:
+        hh, mm = (raw_time.split(":") + ["0"])[:2]
+        return datetime(d.year, d.month, d.day, int(hh), int(mm))
+    except ValueError as exc:
+        raise ApiError(400, f"Invalid time {raw_time!r}; expected HH:MM") from exc
+
+
 def _occ(o: FestivalOccurrence) -> Dict[str, Any]:
     return {
         "name": o.name,
@@ -116,6 +132,9 @@ class KalaganaAPI:
             "/eclipses": self.eclipses,
             "/muhurta": self.muhurta,
             "/find": self.find,
+            "/kundali": self.kundali,
+            "/match": self.match,
+            "/rashifal": self.rashifal,
         }
 
     # --- helpers ----------------------------------------------------------
@@ -280,6 +299,56 @@ class KalaganaAPI:
             raise ApiError(404, f"No occurrence of {name!r} found")
         return _occ(occ)
 
+    # --- jyotish ----------------------------------------------------------
+    def _prefixed_location(self, p: Dict[str, str], prefix: str) -> Location:
+        q = {k: p[f"{prefix}_{k}"] for k in ("city", "lat", "lon", "tz")
+             if p.get(f"{prefix}_{k}")}
+        q["ayanamsa"] = p.get("ayanamsa", "")
+        return self._location(q)
+
+    def kundali(self, p: Dict[str, str]) -> Dict[str, Any]:
+        from .jyotish import kundali as build_kundali
+
+        loc = self._location(p)
+        when = _parse_when(p)
+        try:
+            depth = int(p.get("dasha_depth", 2))
+        except ValueError as exc:
+            raise ApiError(400, "dasha_depth must be 1, 2 or 3") from exc
+        k = build_kundali(when, loc, ayanamsa=self._ayanamsa(p), dasha_depth=depth)
+        return k.to_dict()
+
+    def match(self, p: Dict[str, str]) -> Dict[str, Any]:
+        from .jyotish import kundali as build_kundali, kundali_match
+
+        if not p.get("boy_date") or not p.get("girl_date"):
+            raise ApiError(400, "boy_date and girl_date are required")
+        boy_loc = self._prefixed_location(p, "boy")
+        girl_loc = self._prefixed_location(p, "girl")
+        boy = build_kundali(_parse_when(p, "boy"), boy_loc,
+                            ayanamsa=self._ayanamsa(p), with_dasha=False)
+        girl = build_kundali(_parse_when(p, "girl"), girl_loc,
+                             ayanamsa=self._ayanamsa(p), with_dasha=False)
+        return kundali_match(boy, girl)
+
+    def rashifal(self, p: Dict[str, str]) -> Dict[str, Any]:
+        from .jyotish import daily_rashifal, rashifal_for_all
+
+        when = _parse_date(p["date"]) if p.get("date") else None
+        period = p.get("period", "daily")
+        rashi = p.get("rashi")
+        if rashi:
+            try:
+                one = daily_rashifal(rashi, when, self._ayanamsa(p), period=period)
+            except ValueError as exc:
+                raise ApiError(400, str(exc)) from exc
+            return one.to_dict()
+        return {
+            "period": period,
+            "count": 12,
+            "rashifals": [r.to_dict() for r in rashifal_for_all(when, self._ayanamsa(p), period=period)],
+        }
+
 
 class _Handler(BaseHTTPRequestHandler):
     server_version = f"Kalagana/{__version__}"
@@ -348,6 +417,7 @@ def main(argv: Optional[list] = None) -> int:
     httpd, api = create_server(args.host, args.port, settings)
     host, port = httpd.server_address[0], httpd.server_address[1]
     print(f"Kalagana API v{__version__} listening on http://{host}:{port}", file=sys.stderr)
+    print(f"Web UI:    http://{host}:{port}/", file=sys.stderr)
     print("Endpoints:", " ".join(sorted(api.routes)), file=sys.stderr)
     try:
         httpd.serve_forever()

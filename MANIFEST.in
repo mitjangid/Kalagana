@@ -1,13 +1,14 @@
 # Files included in the source distribution (sdist) on top of the package.
 include LICENSE
 include README.md
-include API_README.md
 include .env.example
 include pyproject.toml
 include MANIFEST.in
+include docs/api/README.md
+include docs/festival-coverage.md
 
 # API client import files (OpenAPI / Postman / Insomnia / Bruno).
-recursive-include api *.json *.md *.bru
+recursive-include docs/api *.json *.md *.bru
 
 # Developer tooling and tests (useful in the sdist, not installed).
 recursive-include scripts *.py
@@ -20,5 +21,4 @@ global-exclude *.egg-info
 prune dist
 prune build
 prune .github
-prune docs
 exclude .env

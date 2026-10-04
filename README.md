@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.jpg" alt="Kalagana logo" width="160" />
+<img src="https://raw.githubusercontent.com/mitjangid/Kalagana/master/assets/logo.png" alt="Kalagana logo" width="160" />
 
 # 🕉️ Kalagana — Official Drik Panchang & Panchangam for Python
 
@@ -184,7 +184,7 @@ curl -s "http://127.0.0.1:8765/festivals?year=2026&city=delhi&kind=national"
 | `GET /muhurta?date=` | daily muhurta windows |
 | `GET /find?name=&after=` | next occurrence of a festival |
 
-Full reference: **[API_README.md](https://github.com/mitjangid/Kalagana/blob/master/API_README.md)**.
+Full reference: **[docs/api/README.md](https://github.com/mitjangid/Kalagana/blob/master/docs/api/README.md)**.
 
 ## ⚙️ Configuration
 

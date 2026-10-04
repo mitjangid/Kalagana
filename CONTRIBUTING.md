@@ -54,7 +54,7 @@ The design keeps a clean separation between **astronomy**, the **calendar**, and
 
 ```text
 Kalagana/
-├── kalagana/               # the library (pure stdlib)
+├── src/kalagana/           # the library (pure stdlib)
 │   ├── julian.py           # JD conversion, ΔT, sidereal time
 │   ├── sun.py  moon.py     # solar / lunar coordinates (Meeus)
 │   ├── ayanamsa.py         # ayanamsa models
@@ -66,16 +66,16 @@ Kalagana/
 │   ├── muhurta.py          # Rahu Kalam, Choghadiya, Hora, Durmuhurta
 │   ├── hijri.py            # tabular Islamic (Hijri) calendar
 │   ├── festivals/          # rule table + engine (data-driven dates)
+│   ├── jyotish/            # kundali, matching, dasha, vargas, rashifal
 │   ├── api.py  cli.py      # public API and command line
 │   ├── server.py           # offline REST API (stdlib http.server)
 │   ├── config.py           # optional environment/.env configuration
 │   └── location.py         # Location + built-in city table
-├── api/                    # OpenAPI + Postman + Insomnia + Bruno import files
-├── tests/                  # unittest suite + reference dates
+├── docs/                   # docs index, API reference + client collections
+├── tests/                  # unittest suite (data/ holds reference dates)
 ├── scripts/release.py      # version bump / build / tag / GitHub release
 ├── .github/workflows/      # CI, release and container automation
-├── FESTIVAL_COVERAGE.md    # coverage vs. Drik Panchang
-└── API_README.md           # detailed API reference
+└── CONTRIBUTING.md         # this file
 ```
 
 ## 📚 Module reference
@@ -91,12 +91,13 @@ Kalagana/
 | `kalagana.calendar_month` | Lunar month (masa), sankranti, adhika/kshaya, amanta/purnimanta. |
 | `kalagana.hijri` | Tabular Islamic calendar conversion. |
 | `kalagana.festivals` | `FestivalRule` table + engine (Hindu, Islamic, fixed-date). |
+| `kalagana.jyotish` | Kundali (birth chart), Ashtakoota matching, Vimshottari dasha, divisional charts, rashifal. |
 | `kalagana.api` / `kalagana.server` | `Panchang`, `daily_panchang`, `eclipses_for_year`; REST API. |
 | `kalagana.location` | `Location` dataclass, built-in `CITIES`, timezone resolution. |
 
 ## 🚀 Releasing
 
-The version lives in `pyproject.toml` and `kalagana/__init__.py`; the helper keeps both in sync (standard library only).
+The version lives in `pyproject.toml` and `src/kalagana/__init__.py`; the helper keeps both in sync (standard library only).
 
 ```bash
 python scripts/release.py current                  # show the current version

@@ -27,7 +27,7 @@ Once started:
 
 ```text
 Kalagana API v0.1.0 listening on http://127.0.0.1:8765
-Endpoints: /ayanamsas /cities /day /eclipses /festivals /find /health /month /muhurta
+Endpoints: /ayanamsas /cities /day /eclipses /festivals /find /health /kundali /match /month /muhurta /rashifal
 ```
 
 All responses are `application/json; charset=utf-8`. CORS is enabled (`Access-Control-Allow-Origin: *`) so a browser page can call the local server.
@@ -36,17 +36,17 @@ All responses are `application/json; charset=utf-8`. CORS is enabled (`Access-Co
 
 | Tool | File |
 |---|---|
-| **OpenAPI 3.1** (Postman, Insomnia, Swagger UI, Bruno, codegen) | [`api/openapi.json`](api/openapi.json) |
-| **Postman** collection | [`api/postman/Kalagana.postman_collection.json`](api/postman/Kalagana.postman_collection.json) |
-| **Postman** environment | [`api/postman/Kalagana.postman_environment.json`](api/postman/Kalagana.postman_environment.json) |
-| **Insomnia** export | [`api/insomnia/Kalagana.insomnia.json`](api/insomnia/Kalagana.insomnia.json) |
-| **Bruno** collection | [`api/bruno/`](api/bruno) |
+| **OpenAPI 3.1** (Postman, Insomnia, Swagger UI, Bruno, codegen) | [`openapi.json`](openapi.json) |
+| **Postman** collection | [`postman/Kalagana.postman_collection.json`](postman/Kalagana.postman_collection.json) |
+| **Postman** environment | [`postman/Kalagana.postman_environment.json`](postman/Kalagana.postman_environment.json) |
+| **Insomnia** export | [`insomnia/Kalagana.insomnia.json`](insomnia/Kalagana.insomnia.json) |
+| **Bruno** collection | [`bruno/`](bruno) |
 
 Import them, set the `baseUrl` variable to `http://127.0.0.1:8765`, start the server, and every request is ready to send.
 
 ### Configuration
 
-Kalagana runs with no configuration. Optional settings come from the environment and a local `.env` file (parsed by [`kalagana/config.py`](kalagana/config.py); no `python-dotenv` dependency). Copy the annotated template and edit it:
+Kalagana runs with no configuration. Optional settings come from the environment and a local `.env` file (parsed by [`kalagana/config.py`](../../src/kalagana/config.py); no `python-dotenv` dependency). Copy the annotated template and edit it:
 
 ```bash
 cp .env.example .env
@@ -71,7 +71,7 @@ cp .env.example .env
 | `KALAGANA_ENV_FILE` | `.env` | Path of the env file to read |
 | `KALAGANA_STRICT` | `false` | Raise on invalid values instead of falling back |
 
-The full annotated list is in [`.env.example`](.env.example). A variable already set in the real environment is never overwritten by `.env`. Read them in code via `kalagana.config.load_settings()`.
+The full annotated list is in [`.env.example`](../../.env.example). A variable already set in the real environment is never overwritten by `.env`. Read them in code via `kalagana.config.load_settings()`.
 
 ---
 
@@ -332,6 +332,75 @@ curl -s "http://127.0.0.1:8765/find?name=Diwali&after=2025-01-01&city=delhi"
 
 Returns `404` if no occurrence is found within three years.
 
+### `GET /kundali`
+
+The birth chart (kundali): nine grahas with rashi/nakshatra/pada/house/dignity,
+the Lagna and Midheaven, whole-sign houses, the sixteen divisional charts
+(Shodasavarga), the birth panchang, the Avakhada Chakra and the Vimshottari
+dasha.
+
+**Required:** `date`. **Optional:** `time` (default `12:00`, local wall clock),
+`ayanamsa`, `dasha_depth` (`1`|`2`|`3`), plus a location.
+
+```bash
+curl -s "http://127.0.0.1:8765/kundali?date=1990-05-15&time=10:30&city=delhi&dasha_depth=2"
+```
+
+```json
+{ "ascendant": { "rashi_name": "Karka", "rashi": 3, "degree_in_rashi": 9.89,
+                  "midheaven": 3.10 },
+  "grahas": { "Sun": { "rashi_name": "Vrishabha", "nakshatra_name": "Krittika",
+                        "pada": 2, "house": 11, "retrograde": false, "dignity": "enemy" }, "...": {} },
+  "vargas": { "9": { "name": "Navamsa (D9)", "placements": { "Sun": { "rashi_name": "Makara" } } } },
+  "panchang": { "tithi": "Krishna Panchami", "vara_en": "Tuesday" },
+  "avakhada": { "rashi": "Dhanu", "nakshatra": "Uttara Ashadha", "gana": "Manushya", "nadi": "Antya" },
+  "dasha": [ { "lord": "Sun", "start": "1988-12-08T...", "sub": [] } ] }
+```
+
+### `GET /match`
+
+Kundali matching (Ashtakoota / Guna Milana) for two people, plus Mangal dosha.
+
+**Required:** `boy_date`, `girl_date`. Each person takes an optional
+`<who>_time`, `<who>_city`, `<who>_lat`, `<who>_lon`, `<who>_tz`; `ayanamsa` is
+global.
+
+```bash
+curl -s "http://127.0.0.1:8765/match?boy_date=1990-05-15&boy_time=10:30&boy_city=delhi&girl_date=1992-11-03&girl_time=04:15&girl_city=mumbai"
+```
+
+Returns `ashtakoota` (total / 36, verdict and the eight koota scores) and a
+`mangal_dosha` block for each person.
+
+### `GET /rashifal`
+
+Transit-based daily rashifal for the twelve Moon signs (or one, with `rashi=`).
+Reads the classical **gochara** method: houses are counted from each Moon sign
+and each transiting graha is scored from the classical favourable-house lists.
+
+**Optional:** `date` (default today), `rashi` (name or index; omit for all 12),
+`period` (`daily`|`monthly`|`yearly`, a label), `ayanamsa`.
+
+```bash
+curl -s "http://127.0.0.1:8765/rashifal?date=2026-10-03"
+curl -s "http://127.0.0.1:8765/rashifal?rashi=Kumbha&date=2026-10-03"
+```
+
+```json
+{ "rashi_name": "Kumbha", "rashi_en": "Aquarius", "rashi_lord": "Saturn",
+  "band": "Mixed", "score": 0.5,
+  "headline": "Mixed results (Sun (8th), Saturn (2nd))",
+  "summary": "Results are uneven -- support from Mars, Venus in some areas, but Sun (8th), Saturn (2nd) may bring delay...",
+  "favourable": ["Mars", "Venus"], "challenging": ["Sun (8th)", "Saturn (2nd)"],
+  "transits": [ { "graha": "Sun", "rashi_name": "Kanya", "house": 8, "verdict": "challenging" } ],
+  "disclaimer": "Rule-based guidance derived from the classical gochara (transit) method..." }
+```
+
+> **Rashifal is rule-based, not editorial.** No third-party package or AI
+> service is used or required; the text is generated deterministically in the
+> package from the classical transit significations (so there is nothing to
+> credit and no network call at runtime).
+
 ---
 
 ## 4. Python library API
@@ -385,6 +454,39 @@ Fixed-date national holidays (Republic Day, Independence Day, Gandhi Jayanti). P
 
 Each `Eclipse` has `kind` (`"solar"`/`"lunar"`), `date`, `greatest`, `eclipse_type`, `moon_latitude`.
 
+### Jyotish: `kundali(...)` and `kundali_match(...)`
+
+```python
+from datetime import datetime
+from kalagana import Location, kundali, kundali_match
+
+loc = Location("Delhi", 28.6139, 77.2090, "Asia/Kolkata")
+k = kundali(datetime(1990, 5, 15, 10, 30), loc, ayanamsa="lahiri", dasha_depth=2)
+k.ascendant.rashi_name        # 'Karka' (Cancer)
+k.grahas["Moon"].nakshatra_name
+k.vargas[9]                   # Navamsa: {graha: rashi index}
+k.dasha[0].lord               # 'Sun' (first Vimshottari mahadasha)
+k.to_dict()                   # JSON-serialisable chart
+
+result = kundali_match(k, other_kundali)   # Ashtakoota + Mangal dosha
+result["ashtakoota"]["total"]  # e.g. 16.0  (out of 36)
+```
+
+`kundali()` accepts a timezone-aware datetime (a naive one is read as local wall
+clock at `loc`) and returns a `Kundali` with `ascendant`, `grahas`, `houses`,
+`vargas`, `dasha`, `panchang` and `avakhada`. `kundali_match(boy, girl)`
+returns the Ashtakoota breakdown (Varna, Vashya, Tara, Yoni, Graha Maitri, Gana,
+Bhakoot, Nadi) and Mangal dosha. Vashya and Yoni use **simplified tiers** and
+are flagged in the result; treat the total as indicative.
+
+**CLI:**
+
+```bash
+python -m kalagana kundali --date 1990-05-15 --time 10:30 --city delhi
+python -m kalagana match --boy-date 1990-05-15 --boy-time 10:30 --boy-city delhi \
+                         --girl-date 1992-11-03 --girl-time 04:15 --girl-city mumbai
+```
+
 ### Lower-level modules
 
 | Module | Key functions |
@@ -400,6 +502,7 @@ Each `Eclipse` has `kind` (`"solar"`/`"lunar"`), `date`, `greatest`, `eclipse_ty
 | `kalagana.muhurta` | `rahu_kalam`, `yamaganda`, `gulika_kalam`, `abhijit_muhurta`, `brahma_muhurta`, `durmuhurta`, `choghadiya`, `hora`, `day_timings` |
 | `kalagana.festivals` | `FestivalRule`, `FESTIVAL_RULES`, `FIXED_RULES`, `ISLAMIC_RULES`, `KINDS`, `rules_by_name`, `festival_dates`, `national_holidays`, `find_next` |
 | `kalagana.hijri` | `hijri_to_gregorian`, `hijri_to_jd`, `hijri_years_for_gregorian`, `HIJRI_MONTHS` (tabular Islamic calendar) |
+| `kalagana.jyotish` | `kundali`, `kundali_match`, `vimshottari`, `ashtakoota`, `mangal_dosha`, `varga_sign`, `sidereal_longitude`, `ascendant`, `graha_dignity` |
 | `kalagana.server` | `KalaganaAPI`, `create_server`, `main` |
 | `kalagana.config` | `Settings`, `load_settings`, `load_env_file` |
 
@@ -446,4 +549,4 @@ Known limits: eclipses are approximate; Raman/KP ayanamsa constants are document
 
 ## 6. License
 
-MIT — see [`LICENSE`](LICENSE). Festival rules encode tradition and convention; regional differences are options, not bugs.
+MIT — see [`LICENSE`](../../LICENSE). Festival rules encode tradition and convention; regional differences are options, not bugs.

@@ -7,12 +7,12 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import festivals_for_year, find_next  # noqa: E402
 from kalagana.location import Location  # noqa: E402
 
-from .reference_dates import FESTIVALS_2024_DELHI  # noqa: E402
+from .data.reference_dates import FESTIVALS_2024_DELHI  # noqa: E402
 
 DELHI = Location("Delhi", 28.6139, 77.2090, "Asia/Kolkata")
 

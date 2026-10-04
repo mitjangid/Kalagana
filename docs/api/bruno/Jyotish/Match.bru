@@ -1,0 +1,20 @@
+meta {
+  name: Match (Guna Milana)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/match
+  body: none
+  auth: none
+}
+
+params:query {
+  boy_date: 1990-05-15
+  boy_time: 10:30
+  boy_city: {{city}}
+  girl_date: 1992-11-03
+  girl_time: 04:15
+  girl_city: {{city}}
+}

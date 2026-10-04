@@ -1,0 +1,1901 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kalagana API",
+    "version": "0.1.2",
+    "summary": "Offline Hindu (Drik) panchang, muhurta, eclipse and festival dates.",
+    "description": "Kalagana computes a complete Drik panchang entirely offline: tithi, vara, nakshatra, yoga, karana, sunrise/sunset, moonrise/moonset, muhurta windows, eclipses, calendar structure, and festival dates derived from rules. Festival dates are never stored; they are computed from astronomy plus a rule table.\n\nLoad this document into Postman, Insomnia, Swagger UI, Bruno or any OpenAPI tooling. Start the server with `python -m kalagana.server` (default http://127.0.0.1:8765).",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8765",
+      "description": "Local Kalagana server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Meta",
+      "description": "Service metadata"
+    },
+    {
+      "name": "Panchang",
+      "description": "Daily panchang and calendars"
+    },
+    {
+      "name": "Festivals",
+      "description": "Rule-derived festival dates"
+    },
+    {
+      "name": "Events",
+      "description": "Eclipses"
+    },
+    {
+      "name": "Muhurta",
+      "description": "Electional time windows"
+    },
+    {
+      "name": "Jyotish",
+      "description": "Vedic astrology: kundali, matching and rashifal"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Service status",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                },
+                "example": {
+                  "status": "ok",
+                  "name": "kalagana",
+                  "version": "0.1.2"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cities": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Built-in city table",
+        "operationId": "getCities",
+        "responses": {
+          "200": {
+            "description": "Cities available for the `city` parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ayanamsas": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Supported ayanamsa models",
+        "operationId": "getAyanamsas",
+        "responses": {
+          "200": {
+            "description": "Ayanamsa list and default",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AyanamsaList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/day": {
+      "get": {
+        "tags": [
+          "Panchang"
+        ],
+        "summary": "Full panchang for one date and place",
+        "operationId": "getDay",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DateRequired"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          },
+          {
+            "$ref": "#/components/parameters/MonthSystem"
+          },
+          {
+            "$ref": "#/components/parameters/NoMuhurta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The panchang for the requested day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Panchang"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/month": {
+      "get": {
+        "tags": [
+          "Panchang"
+        ],
+        "summary": "Day-by-day summary for a Gregorian month",
+        "operationId": "getMonth",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/MonthRequired"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One entry per day of the month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/festivals": {
+      "get": {
+        "tags": [
+          "Festivals"
+        ],
+        "summary": "Festival dates for a year (computed from rules)",
+        "operationId": "getFestivals",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/YearRequired"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          },
+          {
+            "$ref": "#/components/parameters/Tradition"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          },
+          {
+            "$ref": "#/components/parameters/MajorOnly"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Festival occurrences for the year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/eclipses": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Approximate solar and lunar eclipses for a year",
+        "operationId": "getEclipses",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/YearRequired"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eclipse windows for the year (approximate)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EclipseResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/muhurta": {
+      "get": {
+        "tags": [
+          "Muhurta"
+        ],
+        "summary": "Daily muhurta windows for one date",
+        "operationId": "getMuhurta",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DateRequired"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rahu Kalam, Abhijit, Choghadiya, Hora and more",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MuhurtaResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/find": {
+      "get": {
+        "tags": [
+          "Festivals"
+        ],
+        "summary": "Next occurrence of a named festival",
+        "operationId": "findFestival",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NameRequired"
+          },
+          {
+            "$ref": "#/components/parameters/After"
+          },
+          {
+            "$ref": "#/components/parameters/Tradition"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The next occurrence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalOccurrence"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/kundali": {
+      "get": {
+        "tags": [
+          "Jyotish"
+        ],
+        "summary": "Birth chart (kundali) for a date, time and place",
+        "operationId": "getKundali",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DateRequired"
+          },
+          {
+            "$ref": "#/components/parameters/Time"
+          },
+          {
+            "$ref": "#/components/parameters/City"
+          },
+          {
+            "$ref": "#/components/parameters/Lat"
+          },
+          {
+            "$ref": "#/components/parameters/Lon"
+          },
+          {
+            "$ref": "#/components/parameters/Tz"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          },
+          {
+            "$ref": "#/components/parameters/DashaDepth"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The birth chart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kundali"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/match": {
+      "get": {
+        "tags": [
+          "Jyotish"
+        ],
+        "summary": "Kundali matching (Ashtakoota / Guna Milana)",
+        "operationId": "getMatch",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BoyDate"
+          },
+          {
+            "$ref": "#/components/parameters/BoyTime"
+          },
+          {
+            "$ref": "#/components/parameters/GirlDate"
+          },
+          {
+            "$ref": "#/components/parameters/GirlTime"
+          },
+          {
+            "$ref": "#/components/parameters/BoyCity"
+          },
+          {
+            "$ref": "#/components/parameters/GirlCity"
+          },
+          {
+            "$ref": "#/components/parameters/BoyLat"
+          },
+          {
+            "$ref": "#/components/parameters/BoyLon"
+          },
+          {
+            "$ref": "#/components/parameters/BoyTz"
+          },
+          {
+            "$ref": "#/components/parameters/GirlLat"
+          },
+          {
+            "$ref": "#/components/parameters/GirlLon"
+          },
+          {
+            "$ref": "#/components/parameters/GirlTz"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ashtakoota total, the eight kootas, and each person's Mangal dosha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    },
+    "/rashifal": {
+      "get": {
+        "tags": [
+          "Jyotish"
+        ],
+        "summary": "Transit-based rashifal for the twelve Moon signs",
+        "operationId": "getRashifal",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DateOptional"
+          },
+          {
+            "$ref": "#/components/parameters/Rashi"
+          },
+          {
+            "$ref": "#/components/parameters/Period"
+          },
+          {
+            "$ref": "#/components/parameters/Ayanamsa"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One rashifal (with rashi=) or all twelve",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Rashifal"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RashifalList"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "DateRequired": {
+        "name": "date",
+        "in": "query",
+        "required": true,
+        "description": "Date in YYYY-MM-DD.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "example": "2024-08-26"
+      },
+      "MonthRequired": {
+        "name": "month",
+        "in": "query",
+        "required": true,
+        "description": "Gregorian month in YYYY-MM.",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}$"
+        },
+        "example": "2024-10"
+      },
+      "YearRequired": {
+        "name": "year",
+        "in": "query",
+        "required": true,
+        "description": "Calendar year (1900-2100).",
+        "schema": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
+        "example": 2024
+      },
+      "NameRequired": {
+        "name": "name",
+        "in": "query",
+        "required": true,
+        "description": "Festival name as it appears in the rule table.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "Diwali"
+      },
+      "After": {
+        "name": "after",
+        "in": "query",
+        "required": false,
+        "description": "Search on or after this date (default: today).",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "example": "2025-01-01"
+      },
+      "City": {
+        "name": "city",
+        "in": "query",
+        "required": false,
+        "description": "Built-in city key (see /cities).",
+        "schema": {
+          "type": "string"
+        },
+        "example": "delhi"
+      },
+      "Lat": {
+        "name": "lat",
+        "in": "query",
+        "required": false,
+        "description": "Latitude in degrees, north positive.",
+        "schema": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "example": 28.6139
+      },
+      "Lon": {
+        "name": "lon",
+        "in": "query",
+        "required": false,
+        "description": "Longitude in degrees, east positive.",
+        "schema": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "example": 77.209
+      },
+      "Tz": {
+        "name": "tz",
+        "in": "query",
+        "required": false,
+        "description": "IANA timezone (default Asia/Kolkata).",
+        "schema": {
+          "type": "string"
+        },
+        "example": "Asia/Kolkata"
+      },
+      "Ayanamsa": {
+        "name": "ayanamsa",
+        "in": "query",
+        "required": false,
+        "description": "Ayanamsa model.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "lahiri",
+            "raman",
+            "kp",
+            "yukteshwar",
+            "fagan_bradley"
+          ],
+          "default": "lahiri"
+        }
+      },
+      "Tradition": {
+        "name": "tradition",
+        "in": "query",
+        "required": false,
+        "description": "Regional tradition / rule set.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "north",
+            "south",
+            "tamil",
+            "telugu",
+            "kannada",
+            "malayalam",
+            "bengali",
+            "odia",
+            "gujarati",
+            "marathi"
+          ],
+          "default": "north"
+        }
+      },
+      "MonthSystem": {
+        "name": "month_system",
+        "in": "query",
+        "required": false,
+        "description": "Lunar month naming convention.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "purnimanta",
+            "amanta"
+          ],
+          "default": "purnimanta"
+        }
+      },
+      "MajorOnly": {
+        "name": "major_only",
+        "in": "query",
+        "required": false,
+        "description": "Skip monthly observances (Ekadashi, Purnima, ...).",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "NoMuhurta": {
+        "name": "no_muhurta",
+        "in": "query",
+        "required": false,
+        "description": "Omit muhurta windows for a faster response.",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "Time": {
+        "name": "time",
+        "in": "query",
+        "required": false,
+        "description": "Local wall-clock birth time HH:MM (default 12:00).",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9]{2}:[0-9]{2}$"
+        },
+        "example": "10:30"
+      },
+      "DashaDepth": {
+        "name": "dasha_depth",
+        "in": "query",
+        "required": false,
+        "description": "Vimshottari depth: 1 mahadasha, 2 + antardasha, 3 + pratyantardasha.",
+        "schema": {
+          "type": "integer",
+          "enum": [
+            1,
+            2,
+            3
+          ],
+          "default": 2
+        }
+      },
+      "DateOptional": {
+        "name": "date",
+        "in": "query",
+        "required": false,
+        "description": "Date in YYYY-MM-DD (default: today).",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "example": "2026-10-03"
+      },
+      "BoyDate": {
+        "name": "boy_date",
+        "in": "query",
+        "required": true,
+        "description": "Boy's birth date.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "example": "1990-05-15"
+      },
+      "GirlDate": {
+        "name": "girl_date",
+        "in": "query",
+        "required": true,
+        "description": "Girl's birth date.",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "example": "1992-11-03"
+      },
+      "BoyTime": {
+        "name": "boy_time",
+        "in": "query",
+        "required": false,
+        "description": "Boy's birth time HH:MM.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "10:30"
+      },
+      "GirlTime": {
+        "name": "girl_time",
+        "in": "query",
+        "required": false,
+        "description": "Girl's birth time HH:MM.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "04:15"
+      },
+      "BoyCity": {
+        "name": "boy_city",
+        "in": "query",
+        "required": false,
+        "description": "Boy's built-in city key.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "delhi"
+      },
+      "GirlCity": {
+        "name": "girl_city",
+        "in": "query",
+        "required": false,
+        "description": "Girl's built-in city key.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "mumbai"
+      },
+      "BoyLat": {
+        "name": "boy_lat",
+        "in": "query",
+        "required": false,
+        "description": "Boy's latitude (north positive).",
+        "schema": {
+          "type": "number"
+        },
+        "example": 28.6139
+      },
+      "BoyLon": {
+        "name": "boy_lon",
+        "in": "query",
+        "required": false,
+        "description": "Boy's longitude (east positive).",
+        "schema": {
+          "type": "number"
+        },
+        "example": 77.209
+      },
+      "BoyTz": {
+        "name": "boy_tz",
+        "in": "query",
+        "required": false,
+        "description": "Boy's IANA timezone.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "Asia/Kolkata"
+      },
+      "GirlLat": {
+        "name": "girl_lat",
+        "in": "query",
+        "required": false,
+        "description": "Girl's latitude.",
+        "schema": {
+          "type": "number"
+        },
+        "example": 19.076
+      },
+      "GirlLon": {
+        "name": "girl_lon",
+        "in": "query",
+        "required": false,
+        "description": "Girl's longitude.",
+        "schema": {
+          "type": "number"
+        },
+        "example": 72.8777
+      },
+      "GirlTz": {
+        "name": "girl_tz",
+        "in": "query",
+        "required": false,
+        "description": "Girl's IANA timezone.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "Asia/Kolkata"
+      },
+      "Rashi": {
+        "name": "rashi",
+        "in": "query",
+        "required": false,
+        "description": "Moon sign by name (e.g. Mesha) or index 0-11. Omit for all twelve.",
+        "schema": {
+          "type": "string"
+        },
+        "example": "Kumbha"
+      },
+      "Period": {
+        "name": "period",
+        "in": "query",
+        "required": false,
+        "description": "Label echoed back in the result.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "daily",
+            "monthly",
+            "yearly"
+          ],
+          "default": "daily"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Missing or invalid parameter",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "bad_request",
+              "message": "Missing required parameter: date"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Unknown path, or no festival occurrence found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "not_found",
+              "message": "No occurrence of 'Foo' found"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": [
+          "status",
+          "name",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "endpoints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "City": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "lat",
+          "lon",
+          "tz"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "tz": {
+            "type": "string"
+          }
+        }
+      },
+      "CityList": {
+        "type": "object",
+        "required": [
+          "count",
+          "cities"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "cities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/City"
+            }
+          }
+        }
+      },
+      "AyanamsaList": {
+        "type": "object",
+        "required": [
+          "default",
+          "ayanamsas"
+        ],
+        "properties": {
+          "default": {
+            "type": "string"
+          },
+          "ayanamsas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "required": [
+          "name",
+          "lat",
+          "lon",
+          "tz"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "tz": {
+            "type": "string"
+          }
+        }
+      },
+      "Limb": {
+        "type": "object",
+        "required": [
+          "name",
+          "number",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Window": {
+        "type": "object",
+        "required": [
+          "name",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Muhurta": {
+        "type": "object",
+        "properties": {
+          "rahu_kalam": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "yamaganda": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "gulika_kalam": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "abhijit": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "brahma_muhurta": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "durmuhurta": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Window"
+            }
+          },
+          "choghadiya": {
+            "type": "object",
+            "properties": {
+              "day": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Window"
+                }
+              },
+              "night": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Window"
+                }
+              }
+            }
+          },
+          "hora": {
+            "type": "object",
+            "properties": {
+              "day": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Window"
+                }
+              },
+              "night": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Window"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Panchang": {
+        "type": "object",
+        "required": [
+          "date",
+          "location",
+          "vara",
+          "paksha",
+          "tithi",
+          "nakshatra",
+          "yoga",
+          "karana"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "sunrise": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "sunset": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "moonrise": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "moonset": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "vara": {
+            "type": "string"
+          },
+          "vara_en": {
+            "type": "string"
+          },
+          "paksha": {
+            "type": "string",
+            "enum": [
+              "Shukla",
+              "Krishna"
+            ]
+          },
+          "masa_amanta": {
+            "type": "string"
+          },
+          "masa_purnimanta": {
+            "type": "string"
+          },
+          "samvat": {
+            "type": "integer"
+          },
+          "shaka": {
+            "type": "integer"
+          },
+          "samvatsara": {
+            "type": "string"
+          },
+          "ritu": {
+            "type": "string"
+          },
+          "ayana": {
+            "type": "string"
+          },
+          "tithi": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Limb"
+            }
+          },
+          "nakshatra": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Limb"
+            }
+          },
+          "yoga": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Limb"
+            }
+          },
+          "karana": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Limb"
+            }
+          },
+          "muhurta": {
+            "$ref": "#/components/schemas/Muhurta"
+          }
+        }
+      },
+      "MonthDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "vara": {
+            "type": "string"
+          },
+          "vara_en": {
+            "type": "string"
+          },
+          "paksha": {
+            "type": "string"
+          },
+          "tithi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nakshatra": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sunrise": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "sunset": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "MonthResult": {
+        "type": "object",
+        "required": [
+          "month",
+          "count",
+          "days"
+        ],
+        "properties": {
+          "month": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthDay"
+            }
+          }
+        }
+      },
+      "FestivalOccurrence": {
+        "type": "object",
+        "required": [
+          "name",
+          "date"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "month": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paksha": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tithi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "FestivalResult": {
+        "type": "object",
+        "required": [
+          "year",
+          "count",
+          "festivals"
+        ],
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "festivals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FestivalOccurrence"
+            }
+          }
+        }
+      },
+      "Eclipse": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "solar",
+              "lunar"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "greatest": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string"
+          },
+          "moon_latitude": {
+            "type": "number"
+          }
+        }
+      },
+      "EclipseResult": {
+        "type": "object",
+        "required": [
+          "year",
+          "count",
+          "eclipses"
+        ],
+        "properties": {
+          "year": {
+            "type": "integer"
+          },
+          "note": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "eclipses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Eclipse"
+            }
+          }
+        }
+      },
+      "MuhurtaResult": {
+        "type": "object",
+        "required": [
+          "date",
+          "muhurta"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "muhurta": {
+            "$ref": "#/components/schemas/Muhurta"
+          }
+        }
+      },
+      "Graha": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "rashi": {
+            "type": "integer"
+          },
+          "rashi_name": {
+            "type": "string"
+          },
+          "rashi_en": {
+            "type": "string"
+          },
+          "degree_in_rashi": {
+            "type": "number"
+          },
+          "nakshatra": {
+            "type": "integer"
+          },
+          "nakshatra_name": {
+            "type": "string"
+          },
+          "pada": {
+            "type": "integer"
+          },
+          "house": {
+            "type": "integer"
+          },
+          "retrograde": {
+            "type": "boolean"
+          },
+          "combust": {
+            "type": "boolean"
+          },
+          "dignity": {
+            "type": "string"
+          }
+        }
+      },
+      "House": {
+        "type": "object",
+        "properties": {
+          "house": {
+            "type": "integer"
+          },
+          "rashi": {
+            "type": "integer"
+          },
+          "rashi_name": {
+            "type": "string"
+          }
+        }
+      },
+      "ChartCell": {
+        "type": "object",
+        "properties": {
+          "house": {
+            "type": "integer"
+          },
+          "rashi": {
+            "type": "integer"
+          },
+          "rashi_name": {
+            "type": "string"
+          },
+          "rashi_en": {
+            "type": "string"
+          },
+          "grahas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lagna": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashaPeriod": {
+        "type": "object",
+        "properties": {
+          "lord": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "years": {
+            "type": "number"
+          },
+          "sub": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashaPeriod"
+            }
+          }
+        }
+      },
+      "Kundali": {
+        "type": "object",
+        "required": [
+          "when",
+          "location",
+          "ascendant",
+          "grahas",
+          "panchang",
+          "avakhada"
+        ],
+        "properties": {
+          "when": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "ayanamsa": {
+            "type": "string"
+          },
+          "julian_day_ut": {
+            "type": "number"
+          },
+          "julian_day_tt": {
+            "type": "number"
+          },
+          "ascendant": {
+            "type": "object",
+            "properties": {
+              "longitude": {
+                "type": "number"
+              },
+              "rashi": {
+                "type": "integer"
+              },
+              "rashi_name": {
+                "type": "string"
+              },
+              "degree_in_rashi": {
+                "type": "number"
+              },
+              "midheaven": {
+                "type": "number"
+              },
+              "sidereal_time": {
+                "type": "number"
+              }
+            }
+          },
+          "houses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/House"
+            }
+          },
+          "grahas": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Graha"
+            }
+          },
+          "vargas": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "panchang": {
+            "type": "object"
+          },
+          "avakhada": {
+            "type": "object"
+          },
+          "charts": {
+            "type": "object",
+            "properties": {
+              "north": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChartCell"
+                }
+              },
+              "south": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChartCell"
+                }
+              },
+              "east": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ChartCell"
+                }
+              }
+            }
+          },
+          "dasha": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashaPeriod"
+            }
+          }
+        }
+      },
+      "Koota": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "Ashtakoota": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "maximum": {
+            "type": "number"
+          },
+          "verdict": {
+            "type": "string"
+          },
+          "kootas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Koota"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MangalDosha": {
+        "type": "object",
+        "properties": {
+          "present": {
+            "type": "boolean"
+          },
+          "from": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "houses": {
+            "type": "object"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "MatchPerson": {
+        "type": "object",
+        "properties": {
+          "moon_rashi": {
+            "type": "string"
+          },
+          "moon_nakshatra": {
+            "type": "string"
+          },
+          "lagna": {
+            "type": "string"
+          },
+          "mangal_dosha": {
+            "$ref": "#/components/schemas/MangalDosha"
+          }
+        }
+      },
+      "MatchResult": {
+        "type": "object",
+        "required": [
+          "boy",
+          "girl",
+          "ashtakoota"
+        ],
+        "properties": {
+          "boy": {
+            "$ref": "#/components/schemas/MatchPerson"
+          },
+          "girl": {
+            "$ref": "#/components/schemas/MatchPerson"
+          },
+          "ashtakoota": {
+            "$ref": "#/components/schemas/Ashtakoota"
+          }
+        }
+      },
+      "GrahaTransit": {
+        "type": "object",
+        "properties": {
+          "graha": {
+            "type": "string"
+          },
+          "rashi": {
+            "type": "integer"
+          },
+          "rashi_name": {
+            "type": "string"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "house": {
+            "type": "integer"
+          },
+          "house_theme": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string"
+          }
+        }
+      },
+      "Rashifal": {
+        "type": "object",
+        "required": [
+          "rashi_name",
+          "band",
+          "headline",
+          "summary"
+        ],
+        "properties": {
+          "rashi": {
+            "type": "integer"
+          },
+          "rashi_name": {
+            "type": "string"
+          },
+          "rashi_en": {
+            "type": "string"
+          },
+          "rashi_lord": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "band": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "favourable": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "challenging": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GrahaTransit"
+            }
+          },
+          "disclaimer": {
+            "type": "string"
+          }
+        }
+      },
+      "RashifalList": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "rashifals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Rashifal"
+            }
+          }
+        }
+      }
+    }
+  }
+}

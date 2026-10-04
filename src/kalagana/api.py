@@ -13,9 +13,22 @@ from .location import Location
 from .moon import moon_latitude
 from .sunrise import moonrise_moonset, sunrise_sunset
 
-__all__ = ["Panchang", "daily_panchang", "eclipses_for_year", "Eclipse"]
+__all__ = [
+    "Panchang", "daily_panchang", "eclipses_for_year", "Eclipse",
+    "Kundali", "GrahaPosition", "kundali", "kundali_match",
+    "Rashifal", "daily_rashifal", "rashifal_for_all",
+]
 
 from .festivals import festivals_for_year  # noqa: E402  (re-exported)
+from .jyotish import (  # noqa: E402
+    GrahaPosition,
+    Kundali,
+    Rashifal,
+    daily_rashifal,
+    kundali,
+    kundali_match,
+    rashifal_for_all,
+)
 
 
 @dataclass
