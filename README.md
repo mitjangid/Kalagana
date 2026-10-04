@@ -6,7 +6,7 @@
 
 **The official, offline, dependency-free Python library and CLI for the Hindu (Drik) Panchang, Panchangam and the Indian festival calendar.**
 
-*Compute Tithi, Vara, Nakshatra, Yoga, Karana, sunrise/sunset, ayanamsa, muhurat (muhurta) and the dates of Hindu, Islamic and national festivals — for any city in India or worldwide — from first principles, with no network, no database and no downloaded ephemeris files.*
+*Compute Tithi, Vara, Nakshatra, Yoga, Karana, sunrise/sunset, ayanamsa, muhurat (muhurta), the dates of Hindu, Islamic and national festivals, and Vedic astrology (kundali, Guna Milana matching and rashifal) — for any city in India or worldwide — from first principles, with no network, no database and no downloaded ephemeris files.*
 
 [![PyPI](https://img.shields.io/pypi/v/kalagana.svg)](https://pypi.org/project/kalagana/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
@@ -34,7 +34,9 @@ The same inputs always produce the same outputs — the calculation core is **pu
 
 ### What you can compute
 
-Panchang (tithi, nakshatra, yoga, karana, vara), sunrise/sunset and moonrise/moonset, muhurat (Rahu Kalam, Yamaganda, Gulika, Abhijit, Choghadiya, Hora, Brahma Muhurta, Durmuhurta), Vikram Samvat / Shaka eras, ritu and ayana, and a rule-driven calendar of **Hindu festivals** (Diwali, Holi, Navratri, Dussehra, Ganesh Chaturthi, Krishna Janmashtami, Ekadashi, Karwa Chauth, Chhath Puja, Makar Sankranti, Pongal, Onam …), **Islamic festivals** (Eid al-Fitr, Eid al-Adha, Muharram, Milad-un-Nabi …) and **Indian national holidays** — for any date, past or decades ahead.
+Panchang (tithi, nakshatra, yoga, karana, vara), sunrise/sunset and moonrise/moonset, muhurat (Rahu Kalam, Yamaganda, Gulika, Abhijit, Choghadiya, Hora, Brahma Muhurta, Durmuhurta), Vikram Samvat / Shaka eras, ritu and ayana, and a rule-driven calendar of **Hindu festivals** (Diwali, Holi, Navratri, Dussehra, Ganesh Chaturthi, Krishna Janmashtami, Ekadashi, Karwa Chauth, Chhath Puja, Makar Sankranti, Pongal, Onam …), **Islamic festivals** (Eid al-Fitr, Eid al-Adha, Muharram, Milad-un-Nabi …) and **Indian national holidays** — for any date, past or decades ahead. It also covers **Vedic astrology (Jyotish)**: a **kundali** (birth chart with grahas, whole-sign houses, 16 divisional charts, the Avakhada Chakra and Vimshottari dasha), **Guna Milana** marriage matching (Ashtakoota out of 36, with Mangal dosha) and **transit-based rashifal** for the twelve Moon signs.
+
+Everything is available three ways: as a **Python library**, as a **command line tool**, and as an **offline REST API**.
 
 ## ✨ Highlights
 
@@ -44,6 +46,8 @@ Panchang (tithi, nakshatra, yoga, karana, vara), sunrise/sunset and moonrise/moo
 - 📐 **Multiple ayanamsa** — Lahiri (default), Raman, KP, Yukteshwar and Fagan–Bradley.
 - 🧮 **Meeus-grade astronomy** — Sun to ~0.01°, Moon to ~10″, including nutation, aberration and ΔT.
 - 🎉 **Festivals from rules, never stored** — Hindu (lunar + solar sankranti), Islamic (Hijri), national holidays and fixed-date observances, plus monthly vrats.
+- 🔮 **Jyotish (Vedic astrology)** — kundali with 16 divisional charts and Vimshottari dasha, Ashtakoota marriage matching with Mangal dosha, and transit-based rashifal.
+- 🧰 **Library, CLI and REST API** — the same engine, importable, scriptable and served locally over HTTP.
 - 🐍 **Pure standard library** — targets Python **3.10+**.
 
 ## 🚀 Installation
@@ -78,6 +82,9 @@ Installing the package adds a `kalagana` command (equivalent to `python -m kalag
 | `eclipses <year>` | Approximate eclipses | `kalagana eclipses 2026 --city delhi` |
 | `muhurta <date>` | Rahu Kalam, Choghadiya, Hora, … | `kalagana muhurta 2026-11-08 --city delhi` |
 | `find <name>` | Next date of a named festival | `kalagana find Diwali --date 2025-01-01` |
+| `kundali --date` | Birth chart for a date, time & place | `kalagana kundali --date 1990-05-15 --time 10:30 --city delhi` |
+| `match` | Guna Milana matching for two people | `kalagana match --boy-date 1990-05-15 --boy-city delhi --girl-date 1992-11-03 --girl-city mumbai` |
+| `rashifal` | Transit rashifal for the twelve rashis | `kalagana rashifal --rashi Kumbha` |
 | `cities` | List the built-in city table | `kalagana cities` |
 | `serve` | Start the offline REST API | `kalagana serve --port 8765` |
 
@@ -159,6 +166,44 @@ Every occurrence carries a `kind` — `festival`, `national` or `observance`. Wh
 
 > Islamic dates use the **tabular (arithmetic)** Islamic calendar, so they may differ by a day or two from the locally sighted date.
 
+## 🔮 Jyotish (Vedic astrology)
+
+The same offline engine builds a **kundali** (birth chart), matches two charts
+for marriage, and produces a transit-based **rashifal** — pure standard library,
+no ephemeris files.
+
+```python
+from datetime import datetime
+from kalagana import Location, kundali, kundali_match, daily_rashifal
+
+delhi = Location("Delhi", 28.6139, 77.2090, "Asia/Kolkata")
+
+chart = kundali(datetime(1990, 5, 15, 10, 30), delhi, dasha_depth=2)
+chart.ascendant.rashi_name         # 'Karka' (Cancer)
+chart.grahas["Moon"].nakshatra_name
+chart.vargas[9]                    # Navamsa placements
+chart.dasha[0].lord                # first Vimshottari mahadasha
+
+result = kundali_match(chart, other_chart)
+result["ashtakoota"]["total"]      # e.g. 16.0  (out of 36)
+
+daily_rashifal("Mesha", period="daily").band   # 'Good'
+```
+
+| Function | Returns |
+|---|---|
+| `kundali(when, loc, ayanamsa=..., dasha_depth=1..3)` | Grahas (rashi, nakshatra, pada, house, dignity, retrograde, combustion), whole-sign houses, 16 divisional charts, birth panchang, the Avakhada Chakra and Vimshottari dasha. |
+| `kundali_match(boy, girl)` | Ashtakoota out of 36 with the eight koota scores, plus each person's Mangal dosha. *Vashya and Yoni use simplified tiers, flagged in the result.* |
+| `daily_rashifal(rashi, when=..., period="daily")` | Rule-based guidance from the classical **gochara** (transit) method; `rashifal_for_all()` returns all twelve Moon signs. |
+
+**Command line:**
+
+```bash
+kalagana kundali --date 1990-05-15 --time 10:30 --city delhi --dasha-depth 2
+kalagana match --boy-date 1990-05-15 --boy-time 10:30 --boy-city delhi                --girl-date 1992-11-03 --girl-time 04:15 --girl-city mumbai
+kalagana rashifal --rashi Kumbha --date 2026-10-03
+```
+
 ## 🌐 REST API
 
 Kalagana ships a small **offline REST API** built on the standard-library `http.server` (no web framework, no network):
@@ -183,6 +228,9 @@ curl -s "http://127.0.0.1:8765/festivals?year=2026&city=delhi&kind=national"
 | `GET /eclipses?year=` | approximate eclipses |
 | `GET /muhurta?date=` | daily muhurta windows |
 | `GET /find?name=&after=` | next occurrence of a festival |
+| `GET /kundali?date=&time=` | birth chart (grahas, houses, vargas, dasha) |
+| `GET /match?boy_date=&girl_date=` | Guna Milana matching + Mangal dosha |
+| `GET /rashifal?date=&rashi=` | transit rashifal (one rashi or all twelve) |
 
 Full reference: **[docs/api/README.md](https://github.com/mitjangid/Kalagana/blob/master/docs/api/README.md)**.
 
@@ -231,6 +279,14 @@ Limb boundaries are located to **one second of time**. Eclipses are computed by 
 Panchang calculations encode **tradition and convention** (ayanamsa choice, masa system, tie-break rules), and Islamic dates use a tabular calendar. Regional and sampradaya differences exist and are treated as first-class options rather than bugs.
 
 Kalagana is an independent, open-source project. Here "official" means only that this is the project's canonical package on PyPI — Kalagana is **not** affiliated with, endorsed by, or connected to drikpanchang.com, any government body, or any religious institution.
+
+## 🖥️ Web app
+
+This package is the **computation engine** — importable library, CLI and REST
+API. A **feature-rich web UI** built on top of it (daily panchang, festivals,
+kundali, matching and rashifal pages) lives on the
+[`master`](https://github.com/mitjangid/Kalagana/tree/master) branch and is
+**not** part of the PyPI package.
 
 ## 📄 License
 
