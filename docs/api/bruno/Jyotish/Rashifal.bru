@@ -1,0 +1,16 @@
+meta {
+  name: Rashifal
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/rashifal
+  body: none
+  auth: none
+}
+
+params:query {
+  date: {{date}}
+  ~rashi: Kumbha
+}

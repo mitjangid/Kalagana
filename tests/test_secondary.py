@@ -13,7 +13,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import festivals_for_year, find_next  # noqa: E402
 from kalagana.festivals import FESTIVAL_RULES, SECONDARY_RULES  # noqa: E402

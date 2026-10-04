@@ -19,7 +19,7 @@ import csv
 import io
 import json
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from typing import List, Optional
 
@@ -225,6 +225,110 @@ def _cmd_find(args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_dt(date_str: str, time_str: Optional[str]) -> datetime:
+    """Build a naive local datetime from a date and optional HH:MM time."""
+    d = date.fromisoformat(date_str)
+    if not time_str:
+        return datetime(d.year, d.month, d.day, 12, 0)
+    hh, mm = (time_str.split(":") + ["0"])[:2]
+    return datetime(d.year, d.month, d.day, int(hh), int(mm))
+
+
+def _loc_from(city, lat, lon, tz):
+    """Resolve a Location from explicit values, falling back to defaults."""
+    st = _settings()
+    if lat is not None and lon is not None:
+        return Location(city or "Custom", lat, lon, tz or st.tz)
+    if city:
+        loc = city_lookup(city)
+        if tz:
+            return Location(loc.name, loc.lat, loc.lon, tz)
+        return loc
+    if st.city:
+        try:
+            return city_lookup(st.city)
+        except KeyError:
+            pass
+    raise SystemExit("Provide a city or both lat and lon.")
+
+
+def _cmd_kundali(args: argparse.Namespace) -> int:
+    from .jyotish import kundali
+
+    loc = _resolve_location(args)
+    when = _parse_dt(args.date, args.time)
+    k = kundali(when, loc, ayanamsa=args.ayanamsa, dasha_depth=args.dasha_depth)
+    if args.format == "json":
+        _print_json(k.to_dict())
+        return 0
+    print(f"Kundali for {when.isoformat()}  ({loc.name}, {loc.tz})  ayanamsa={args.ayanamsa}")
+    print(f"Lagna: {k.ascendant.rashi_name} {k.ascendant.degree_in_rashi:.2f} deg"
+          f"   Midheaven: {k.ascendant.midheaven:.2f} deg")
+    print(f"{'Graha':<8} {'Rashi':<11} {'Deg':>6}  {'Nakshatra':<16} {'Pd':>2} {'H':>2}  Flags  Dignity")
+    for name, p in k.grahas.items():
+        flags = ("R" if p.retrograde else " ") + ("C" if p.combust else " ")
+        print(f"{name:<8} {p.rashi_name:<11} {p.degree_in_rashi:6.2f}  {p.nakshatra_name:<16} "
+              f"{p.pada:>2} {p.house:>2}  {flags}    {p.dignity}")
+    av = k.avakhada
+    print(f"Avakhada: rashi={av['rashi']} ({av['rashi_lord']}) nakshatra={av['nakshatra']} "
+          f"pada={av['pada']} gana={av['gana']} yoni={av['yoni']} nadi={av['nadi']} "
+          f"varna={av['varna']} vashya={av['vashya']}")
+    print("Vimshottari dasha (mahadasha):")
+    for d in k.dasha:
+        info = d.to_dict(with_sub=False)
+        print(f"  {d.lord:<8} {info['start'][:10]}  ->  {info['end'][:10]}")
+    return 0
+
+
+def _cmd_match(args: argparse.Namespace) -> int:
+    from .jyotish import kundali, kundali_match
+
+    boy_loc = _loc_from(args.boy_city, args.boy_lat, args.boy_lon, args.boy_tz)
+    girl_loc = _loc_from(args.girl_city, args.girl_lat, args.girl_lon, args.girl_tz)
+    boy = kundali(_parse_dt(args.boy_date, args.boy_time), boy_loc,
+                  ayanamsa=args.ayanamsa, with_dasha=False)
+    girl = kundali(_parse_dt(args.girl_date, args.girl_time), girl_loc,
+                   ayanamsa=args.ayanamsa, with_dasha=False)
+    result = kundali_match(boy, girl)
+    if args.format == "json":
+        _print_json(result)
+        return 0
+    ak = result["ashtakoota"]
+    print(f"Ashtakoota (Guna Milana): {ak['total']} / {ak['maximum']}  -- {ak['verdict']}")
+    for kk in ak["kootas"]:
+        print(f"  {kk['name']:<13} {kk['score']:>4} / {kk['max']:<3}  {kk['detail']}")
+    print(f"Boy:  Moon {result['boy']['moon_rashi']}, {result['boy']['moon_nakshatra']}, "
+          f"Lagna {result['boy']['lagna']}, Mangal dosha={result['boy']['mangal_dosha']['present']}")
+    print(f"Girl: Moon {result['girl']['moon_rashi']}, {result['girl']['moon_nakshatra']}, "
+          f"Lagna {result['girl']['lagna']}, Mangal dosha={result['girl']['mangal_dosha']['present']}")
+    return 0
+
+
+def _cmd_rashifal(args: argparse.Namespace) -> int:
+    from .jyotish import daily_rashifal, rashifal_for_all
+
+    when = date.fromisoformat(args.date) if args.date else None
+    if args.rashi:
+        results = [daily_rashifal(args.rashi, when, args.ayanamsa, period=args.period)]
+    else:
+        results = rashifal_for_all(when, args.ayanamsa, period=args.period)
+    if args.format == "json":
+        payload = [r.to_dict() for r in results]
+        _print_json(payload[0] if args.rashi else payload)
+        return 0
+    for r in results:
+        print(f"{r.rashi_name} ({r.rashi_name_en}) -- {r.band}")
+        print(f"  {r.headline}")
+        print(f"  {r.summary}")
+        if args.verbose and r.transits:
+            for t in r.transits:
+                print(f"    {t.graha:<8} in {t.rashi_name:<11} (H{t.house:<2}) {t.verdict}")
+        if args.rashi:
+            print(f"  {r.disclaimer}")
+        print()
+    return 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     from .server import main as serve_main
 
@@ -289,6 +393,40 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("cities", help="list built-in cities")
     c.set_defaults(func=_cmd_cities)
+
+    k = sub.add_parser("kundali", help="birth chart (kundali) for a date, time and place")
+    k.add_argument("--date", required=True, help="birth date YYYY-MM-DD")
+    k.add_argument("--time", help="birth time HH:MM (default 12:00)")
+    k.add_argument("--dasha-depth", type=int, default=2, choices=[1, 2, 3],
+                   help="1=mahadasha, 2=+antardasha, 3=+pratyantardasha")
+    _add_location_opts(k)
+    k.set_defaults(func=_cmd_kundali)
+
+    mt = sub.add_parser("match", help="kundali matching (Guna Milana) for two people")
+    mt.add_argument("--boy-date", required=True)
+    mt.add_argument("--boy-time")
+    mt.add_argument("--boy-city")
+    mt.add_argument("--boy-lat", type=float)
+    mt.add_argument("--boy-lon", type=float)
+    mt.add_argument("--boy-tz")
+    mt.add_argument("--girl-date", required=True)
+    mt.add_argument("--girl-time")
+    mt.add_argument("--girl-city")
+    mt.add_argument("--girl-lat", type=float)
+    mt.add_argument("--girl-lon", type=float)
+    mt.add_argument("--girl-tz")
+    mt.add_argument("--ayanamsa", default=_settings().ayanamsa)
+    mt.add_argument("--format", default="text", choices=["text", "json"])
+    mt.set_defaults(func=_cmd_match)
+
+    rf = sub.add_parser("rashifal", help="transit-based daily rashifal for the 12 rashis")
+    rf.add_argument("--rashi", help="one rashi by name (Mesha/Aries); default all 12")
+    rf.add_argument("--date", help="date YYYY-MM-DD (default today)")
+    rf.add_argument("--period", default="daily", help="label: daily|monthly|yearly")
+    rf.add_argument("--ayanamsa", default=_settings().ayanamsa)
+    rf.add_argument("--format", default="text", choices=["text", "json"])
+    rf.add_argument("-v", "--verbose", action="store_true", help="show each transit")
+    rf.set_defaults(func=_cmd_rashifal)
 
     srv = sub.add_parser("serve", help="run the local REST API server (offline)")
     srv.add_argument("--host", default="127.0.0.1", help="bind address (default 127.0.0.1)")

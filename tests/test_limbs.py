@@ -7,13 +7,13 @@ import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import calendar_month, julian, limbs, muhurta  # noqa: E402
 from kalagana.location import Location  # noqa: E402
 from kalagana.sunrise import sunrise_sunset  # noqa: E402
 
-from .reference_dates import ADHIKA_MASA_YEARS, DELHI_SUNRISE_SUNSET  # noqa: E402
+from .data.reference_dates import ADHIKA_MASA_YEARS, DELHI_SUNRISE_SUNSET  # noqa: E402
 
 DELHI = Location("Delhi", 28.6139, 77.2090, "Asia/Kolkata")
 

@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from urllib.request import urlopen
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import config  # noqa: E402
 from kalagana.server import ApiError, KalaganaAPI, create_server  # noqa: E402

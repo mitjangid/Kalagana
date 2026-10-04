@@ -7,13 +7,13 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import julian, moon, sun  # noqa: E402
 from kalagana.limbs import elongation  # noqa: E402
 from kalagana.solver import next_crossing  # noqa: E402
 
-from .reference_dates import MEEUS_MOON, MEEUS_SUN, NEW_MOONS_2000  # noqa: E402
+from .data.reference_dates import MEEUS_MOON, MEEUS_SUN, NEW_MOONS_2000  # noqa: E402
 
 
 class TestJulian(unittest.TestCase):

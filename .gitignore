@@ -49,8 +49,13 @@
 .copilot/
 
 # --- Local-only documentation / specs ----------------------------------------
-# Working prompts/scratch specs stay local; the app product docs are versioned.
+# Working prompts / scratch specs are kept locally; the published docs (the API
+# reference, festival coverage, and the app plans/sprints) are versioned.
 docs/*
+!docs/README.md
+!docs/festival-coverage.md
+!docs/api/
+!docs/api/**
 !docs/plans/
 !docs/plans/**
 !docs/sprints/

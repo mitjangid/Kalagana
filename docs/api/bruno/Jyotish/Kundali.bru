@@ -1,0 +1,19 @@
+meta {
+  name: Kundali
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/kundali
+  body: none
+  auth: none
+}
+
+params:query {
+  date: 1990-05-15
+  time: 10:30
+  city: {{city}}
+  ayanamsa: {{ayanamsa}}
+  dasha_depth: 2
+}

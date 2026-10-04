@@ -2,7 +2,7 @@
 """Kalagana release helper (standard library only).
 
 A small, transparent tool that keeps the version number in one place logically
-(it rewrites ``pyproject.toml`` and ``kalagana/__init__.py`` together), builds
+(it rewrites ``pyproject.toml`` and ``src/kalagana/__init__.py`` together), builds
 the distribution, tags the commit, and can create the GitHub release.
 
 Usage
@@ -41,7 +41,7 @@ from typing import List, Optional, Sequence, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT = REPO_ROOT / "pyproject.toml"
-INIT_FILE = REPO_ROOT / "kalagana" / "__init__.py"
+INIT_FILE = REPO_ROOT / "src" / "kalagana" / "__init__.py"
 TAG_PREFIX = "v"
 
 _VERSION_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?P<suffix>.*)$")
@@ -95,7 +95,7 @@ def write_init_version(new: str) -> None:
     text = INIT_FILE.read_text(encoding="utf-8")
     text, n = re.subn(r'^__version__\s*=\s*"[^"]+"', f'__version__ = "{new}"', text, count=1, flags=re.MULTILINE)
     if n != 1:
-        raise ReleaseError("Could not update `__version__` in kalagana/__init__.py")
+        raise ReleaseError("Could not update `__version__` in src/kalagana/__init__.py")
     INIT_FILE.write_text(text, encoding="utf-8")
 
 
@@ -103,7 +103,7 @@ def read_init_version() -> str:
     text = INIT_FILE.read_text(encoding="utf-8")
     m = re.search(r'^__version__\s*=\s*"([^"]+)"', text, flags=re.MULTILINE)
     if not m:
-        raise ReleaseError("Could not find `__version__` in kalagana/__init__.py")
+        raise ReleaseError("Could not find `__version__` in src/kalagana/__init__.py")
     return m.group(1)
 
 

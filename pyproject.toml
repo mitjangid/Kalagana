@@ -4,17 +4,51 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kalagana"
-version = "0.1.1"
-description = "Offline, dependency-free Hindu (Drik) panchang and festival calculator, computed from first principles."
+version = "0.1.2"
+description = "Official offline Drik Panchang & Panchangam calculator for Python: tithi, nakshatra, muhurat, sunrise/sunset and Hindu, Islamic & national festival dates."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Amit K. Jangir" }]
-keywords = ["panchang", "hindu-calendar", "astronomy", "festivals", "vedic", "offline", "drik-panchang"]
+keywords = [
+    "panchang",
+    "panchangam",
+    "panchang-calendar",
+    "panjika",
+    "drik-panchang",
+    "hindu-calendar",
+    "indian-calendar",
+    "hindu-festivals",
+    "indian-festivals",
+    "festival-calendar",
+    "festivals-2026",
+    "tithi",
+    "nakshatra",
+    "muhurat",
+    "muhurta",
+    "rahu-kalam",
+    "choghadiya",
+    "ekadashi",
+    "diwali",
+    "sunrise-sunset",
+    "jyotish",
+    "vedic-astrology",
+    "ephemeris",
+    "islamic-calendar",
+    "hijri",
+    "national-holidays",
+    "offline",
+    "no-dependencies",
+    "standard-library",
+    "python",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
     "Intended Audience :: Science/Research",
+    "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -22,8 +56,10 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Religion",
     "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = []
 
@@ -40,12 +76,14 @@ kalagana = "kalagana.cli:main"
 [project.urls]
 Homepage = "https://github.com/mitjangid/Kalagana"
 Repository = "https://github.com/mitjangid/Kalagana"
-Documentation = "https://github.com/mitjangid/Kalagana/blob/master/API_README.md"
+Documentation = "https://github.com/mitjangid/Kalagana/blob/master/docs/api/README.md"
 Issues = "https://github.com/mitjangid/Kalagana/issues"
 
 [tool.setuptools]
-packages = ["kalagana", "kalagana.festivals"]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
 kalagana = ["py.typed"]

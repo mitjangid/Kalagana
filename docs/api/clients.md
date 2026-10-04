@@ -1,7 +1,7 @@
 # Kalagana API — import files
 
 Ready-to-import client collections and a machine-readable spec for the Kalagana
-local REST API. See [`../API_README.md`](../API_README.md) for the full endpoint
+local REST API. See [`README.md`](README.md) for the full endpoint
 reference.
 
 Start the server first:
@@ -29,6 +29,7 @@ Every client below points at `{{baseUrl}}` / `{{ _.baseUrl }}` = `http://127.0.0
 | Festivals | `/festivals` (tradition + `major_only`), `/find` |
 | Events | `/eclipses` |
 | Muhurta | `/muhurta` |
+| Jyotish | `/kundali`, `/match`, `/rashifal` (all 12 or one) |
 
 The Postman collection also includes a small **Errors** folder demonstrating the
 `400` shapes for a missing date and a missing location.

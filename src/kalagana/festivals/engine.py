@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .. import julian
@@ -172,6 +173,26 @@ def _day_info(day: date, loc: Location, ayanamsa: str) -> Optional[_DayInfo]:
     )
 
 
+@lru_cache(maxsize=16)
+def _day_infos(
+    start_ord: int, end_ord: int, lat: float, lon: float, tz: str, ayanamsa: str
+) -> Tuple[Optional[_DayInfo], ...]:
+    """Day info for an ordinal range, memoised per year/place.
+
+    Building this walks every civil day (sunrise, sunset, moonrise, sankranti,
+    masa), which dominates the cost of a festival scan, so identical requests
+    (e.g. re-rendering the year or probing several rules) reuse it.
+    """
+    loc = Location("cache", lat, lon, tz)
+    out: List[Optional[_DayInfo]] = []
+    d = date.fromordinal(start_ord)
+    end = date.fromordinal(end_ord)
+    while d <= end:
+        out.append(_day_info(d, loc, ayanamsa))
+        d += timedelta(days=1)
+    return tuple(out)
+
+
 def _matches_lunar(rule: FestivalRule, info: _DayInfo) -> bool:
     if rule.weekday is not None and info.sun0 != rule.weekday:
         return False
@@ -252,31 +273,34 @@ def festival_dates(
     """
     region = _TRADITION_REGION.get(tradition.strip().lower(), "North")
 
-    # Build day info for a window that overhangs the year so festivals near
-    # the January boundary are captured, then filter to the requested year.
-    start = date(year, 1, 1) - timedelta(days=20)
-    end = date(year, 12, 31) + timedelta(days=20)
-    infos: List[_DayInfo] = []
-    d = start
-    while d <= end:
-        info = _day_info(d, loc, ayanamsa)
-        if info is not None:
-            infos.append(info)
-        d += timedelta(days=1)
+    def _selected(rule: FestivalRule) -> bool:
+        if rule.monthly and not include_monthly:
+            return False
+        if rule.system == "hijri" and not include_islamic:
+            return False
+        if rule.system == "fixed" and not include_fixed:
+            return False
+        if region not in rule.regions:
+            return False
+        if kinds is not None and rule.kind not in kinds:
+            return False
+        return True
+
+    chosen_rules = [r for r in rules if _selected(r)]
+
+    # The day-by-day panchang is only needed by lunar and solar rules; fixed
+    # and Hijri rules can be answered instantly without it.
+    infos: Tuple[_DayInfo, ...] = ()
+    if any(r.system in ("lunar", "solar") for r in chosen_rules):
+        # Overhang the year so festivals near the January boundary are caught.
+        start = date(year, 1, 1) - timedelta(days=20)
+        end = date(year, 12, 31) + timedelta(days=20)
+        infos = tuple(i for i in _day_infos(
+            start.toordinal(), end.toordinal(), loc.lat, loc.lon, loc.tz, ayanamsa
+        ) if i is not None)
 
     occurrences: List[FestivalOccurrence] = []
-    for rule in rules:
-        if rule.monthly and not include_monthly:
-            continue
-        if rule.system == "hijri" and not include_islamic:
-            continue
-        if rule.system == "fixed" and not include_fixed:
-            continue
-        if region not in rule.regions:
-            continue
-        if kinds is not None and rule.kind not in kinds:
-            continue
-
+    for rule in chosen_rules:
         if rule.system == "fixed":
             if rule.fixed_month is None or rule.fixed_day is None:
                 continue

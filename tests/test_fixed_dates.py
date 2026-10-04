@@ -12,13 +12,13 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kalagana import festivals_for_year, find_next, national_holidays  # noqa: E402
 from kalagana.festivals import FIXED_RULES, KINDS  # noqa: E402
 from kalagana.location import Location  # noqa: E402
 
-from .reference_dates import FIXED_DATES, NATIONAL_HOLIDAYS_FIXED  # noqa: E402
+from .data.reference_dates import FIXED_DATES, NATIONAL_HOLIDAYS_FIXED  # noqa: E402
 
 DELHI = Location("Delhi", 28.6139, 77.2090, "Asia/Kolkata")
 CHENNAI = Location("Chennai", 13.0827, 80.2707, "Asia/Kolkata")
